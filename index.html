@@ -306,7 +306,7 @@
     <h2 id="h-hl">Across the house</h2>
     <ul class="rows" id="highlights"></ul>
   </section>
-</div>
+<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 2</p></div>
 
 <nav aria-label="Main">
   <div class="in">
@@ -561,6 +561,37 @@
   }
   window.google = { script: { run: makeRun(null, null) } };
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+})();
+</script>
+<script>
+// Makes the phone's back button close the current screen or sheet instead of leaving the app.
+(function () {
+  var depth = 0, busy = false, again = false;
+  try { history.replaceState({ h: 0 }, ''); } catch (e) { return; }
+  function sheetOpen() { var s = document.getElementById('sheet'); return !!s && s.classList.contains('open'); }
+  function pageOpen() { return document.querySelector('.page.open'); }
+  function layers() { return (pageOpen() ? 1 : 0) + (sheetOpen() ? 1 : 0); }
+  function sync() {
+    if (busy) { again = true; return; }
+    var L = layers();
+    if (L > depth) { for (var i = depth; i < L; i++) history.pushState({ h: i + 1 }, ''); depth = L; }
+    else if (L < depth) { busy = true; var n = depth - L; depth = L; history.go(-n); }
+  }
+  window.addEventListener('popstate', function () {
+    if (busy) { busy = false; if (again) { again = false; sync(); } return; }
+    if (depth === 0) return;
+    depth = Math.max(0, depth - 1);
+    if (sheetOpen()) {
+      var c = document.getElementById('close');
+      if (c && c.style.display !== 'none') c.click(); // the required feed box has no close button, so it stays
+    } else {
+      var pg = pageOpen(), b = pg && pg.querySelector('.phead .pbtn');
+      if (b) b.click();
+    }
+    setTimeout(sync, 60);
+  });
+  document.addEventListener('click', function () { sync(); }, false);
+  new MutationObserver(function () { sync(); }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
 })();
 </script>
 <script>

@@ -1,5 +1,5 @@
 // Keeps the app's screens available and quick to open. Data always comes live from your Sheet.
-var CACHE = 'household-v1';
+var CACHE = 'household-v2';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
@@ -12,7 +12,7 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(fetch(req).then(function (res) {
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then(function (res) {
     var copy = res.clone();
     caches.open(CACHE).then(function (c) { c.put(req, copy); });
     return res;
