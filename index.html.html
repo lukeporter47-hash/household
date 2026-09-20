@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Household</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F6F5;
+    --surface: #FFFFFF;
+    --ink: #14262C;
+    --muted: #55696F;
+    --line: #D9E3E1;
+    --accent: #1B7A6B;
+    --accent-ink: #FFFFFF;
+    --sun: #F1B942;
+    --sun-ink: #2B2100;
+    --night: #2E4A66;
+    --night-ink: #FFFFFF;
+    --warn: #B7391F;
+    --warn-bg: #FBE9E4;
+    --ok-bg: #E3F1EE;
+    --chip-bg: #E7EDEC;
+    --a-baby: #D9A128;
+    --a-cal: #2F6FB5;
+    --a-meal: #C4692A;
+    --a-stock: #7B5CC4;
+    --a-chore: #1B7A6B;
+    --a-bill: #B0507F;
+    --a-admin: #6B7A80;
+    --a-smart: #2E4A66;
+    --shadow: 0 1px 2px rgba(20,38,44,.06);
+    --font-display: "Bricolage Grotesque", "Trebuchet MS", "Segoe UI", sans-serif;
+    --font-body: "Figtree", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1B1F; --surface: #17272C; --ink: #E8F1EF; --muted: #97ABB0; --line: #27393F;
+      --accent: #3FB5A2; --accent-ink: #08201C; --sun: #E8B23E; --sun-ink: #241B00;
+      --night: #6E97C0; --night-ink: #0B1824; --warn: #F08466; --warn-bg: #3A2019; --ok-bg: #16332E; --chip-bg: #22343A;
+      --a-baby: #E8B23E; --a-cal: #6FA3E0; --a-meal: #E8935A; --a-stock: #A48CE6; --a-chore: #3FB5A2; --a-bill: #E27FAE; --a-admin: #93A8AD; --a-smart: #6E97C0;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1B1F; --surface: #17272C; --ink: #E8F1EF; --muted: #97ABB0; --line: #27393F;
+    --accent: #3FB5A2; --accent-ink: #08201C; --sun: #E8B23E; --sun-ink: #241B00;
+    --night: #6E97C0; --night-ink: #0B1824; --warn: #F08466; --warn-bg: #3A2019; --ok-bg: #16332E; --chip-bg: #22343A;
+    --a-baby: #E8B23E; --a-cal: #6FA3E0; --a-meal: #E8935A; --a-stock: #A48CE6; --a-chore: #3FB5A2; --a-bill: #E27FAE; --a-admin: #93A8AD; --a-smart: #6E97C0;
+    --shadow: none;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .app { max-width: 480px; margin: 0 auto; padding: 20px 18px 110px; }
+
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .date { color: var(--muted); font-size: 15px; margin: 0 0 2px; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1.1; margin: 0; letter-spacing: -0.02em; }
+  .theme { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 500; }
+  .summary { margin: 10px 0 24px; }
+  .summary .big { font-family: var(--font-display); font-weight: 500; font-size: 20px; line-height: 1.25; margin: 0; }
+  .summary .small { color: var(--muted); font-size: 15px; margin: 2px 0 0; }
+  .retry { margin-top: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 600; }
+
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  section { margin-bottom: 28px; }
+
+  .log { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .log button {
+    border: 0; border-radius: 20px; min-height: 104px; padding: 14px 10px;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;
+    transition: transform .12s ease;
+  }
+  .log button:active { transform: scale(.97); }
+  .log .name { font-family: var(--font-display); font-weight: 700; font-size: 22px; }
+  .log .last { font-size: 13px; font-weight: 500; opacity: .9; }
+  .b-feed  { background: var(--accent); color: var(--accent-ink); }
+  .b-nappy { background: var(--sun);    color: var(--sun-ink); }
+  .b-sleep { background: var(--night);  color: var(--night-ink); }
+  .use-btn {
+    width: 100%; border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-top: 10px;
+    background: var(--surface); font-weight: 600; font-size: 16px; text-align: left;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .use-btn span:last-child { color: var(--muted); font-weight: 500; font-size: 14px; }
+
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .row {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--c, var(--line));
+    border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow);
+  }
+  .row .time { font-family: var(--font-display); font-weight: 700; min-width: 48px; }
+  .row .main { flex: 1; min-width: 0; }
+  .row .title { font-weight: 600; }
+  .row .sub { color: var(--muted); font-size: 14px; }
+  .tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--chip-bg); color: var(--muted); white-space: nowrap; }
+  .tag.ok { background: var(--ok-bg); color: var(--accent); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+
+  .tick { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--muted); flex: none; display: grid; place-items: center; }
+  .tick svg { width: 16px; height: 16px; stroke: var(--accent-ink); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .done .tick { background: var(--accent); border-color: var(--accent); }
+  .done .tick svg { opacity: 1; }
+  .done .title { text-decoration: line-through; color: var(--muted); }
+
+  .hl .area { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 1px; }
+  .hl .title { font-size: 16px; }
+  .empty { color: var(--muted); padding: 14px; border: 1px dashed var(--line); border-radius: 14px; }
+
+  nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--surface); border-top: 1px solid var(--line);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  nav .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+  nav button { background: none; border: 0; padding: 8px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; font-weight: 500; color: var(--muted); border-radius: 12px; }
+  nav button[aria-current="page"] { color: var(--accent); font-weight: 600; }
+  nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(8,20,24,.5); z-index: 30; display: none; }
+  .scrim.open { display: block; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-height: 82%;
+    background: var(--bg); border-radius: 24px 24px 0 0; display: none; flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .sheet.open { display: flex; }
+  .sheet .inner { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; min-height: 0; }
+  .sheet header { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 8px; }
+  .sheet header h2 { margin: 0; font-size: 22px; }
+  .sheet header p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .close { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 600; }
+  .sheet .body { overflow-y: auto; padding: 8px 18px 22px; }
+  .item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 8px; }
+  .item .nm { flex: 1; font-weight: 600; }
+  .item .qty { color: var(--muted); font-size: 14px; }
+  .item .qty.low { color: var(--warn); font-weight: 600; }
+  .item .act { font-weight: 600; color: var(--accent); }
+  .item[disabled] { opacity: .6; cursor: default; }
+
+
+  /* Stock page */
+  .page { position: fixed; inset: 0; z-index: 25; background: var(--bg); overflow-y: auto; display: none;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .page.open { display: block; }
+  .pinner { max-width: 480px; margin: 0 auto; padding: 14px 18px 60px; }
+  .phead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 8px; }
+  .phead h2 { margin: 0; text-align: center; font-size: 22px; }
+  .phead .pbtn:first-child { justify-self: start; }
+  .phead .pbtn:last-child { justify-self: end; }
+  .pbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 15px; }
+  .pbtn.strong { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .psum { color: var(--muted); margin: 0 0 12px; text-align: center; }
+  .ptools { display: flex; gap: 8px; margin-bottom: 10px; }
+  .search { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 6px; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 500; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .srow { padding: 10px 10px 10px 14px; gap: 10px; }
+  .smain { flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; display: block; }
+  .stop { display: flex; align-items: center; gap: 8px; }
+  .bar { position: relative; height: 6px; background: var(--chip-bg); border-radius: 999px; margin-top: 8px; }
+  .fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .fill.low { background: var(--warn); }
+  .mark { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--ink); opacity: .55; border-radius: 1px; }
+  .step { display: flex; align-items: center; gap: 4px; flex: none; }
+  .stepbtn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 22px; font-weight: 600; line-height: 1; }
+  .sqty { min-width: 44px; text-align: center; }
+  .sq-n { font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+  .sq-u { font-size: 12px; color: var(--muted); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .field input { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; }
+  .field .hint { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .formbtns { display: grid; gap: 10px; margin-top: 8px; }
+  .savebtn { border: 0; border-radius: 14px; padding: 14px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 17px; }
+  .savebtn[disabled] { opacity: .6; }
+  .delbtn { border: 1px solid var(--warn); background: transparent; color: var(--warn); border-radius: 14px; padding: 12px; font-weight: 600; }
+
+  .field select { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; }
+  .sechead { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--muted); margin: 8px 2px 0; }
+  .sechead:first-child { margin-top: 0; }
+  .tickbtn { width: 34px; height: 34px; border-radius: 10px; background: none; padding: 0; }
+  .done .tickbtn { background: var(--accent); }
+
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--chip-bg); border-radius: 14px; padding: 4px; margin-bottom: 14px; }
+  .segbtn { border: 0; background: none; border-radius: 10px; padding: 9px 4px; font-weight: 600; font-size: 15px; color: var(--muted); }
+  .segbtn.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 18px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+  .stat strong { display: block; font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .chart { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 12px; }
+  .row.dim { opacity: .65; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 15px; font-weight: 500;
+    z-index: 40; opacity: 0; pointer-events: none; transition: opacity .18s ease; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <p class="date" id="date"></p>
+      <h1 id="greet">Hello</h1>
+    </div>
+    <button class="theme" id="theme" aria-label="Switch light or dark mode">Theme</button>
+  </div>
+
+  <div class="summary" id="summary" aria-live="polite"><p class="big">Loading your household…</p></div>
+
+  <section aria-labelledby="h-log">
+    <h2 id="h-log">Quick log</h2>
+    <div class="log">
+      <button class="b-feed" data-log="Feed"><span class="name">Feed</span><span class="last" id="last-feed">…</span></button>
+      <button class="b-nappy" data-log="Nappy"><span class="name">Nappy</span><span class="last" id="last-nappy">…</span></button>
+      <button class="b-sleep" data-log="Sleep"><span class="name">Sleep</span><span class="last" id="last-sleep">…</span></button>
+    </div>
+    <button class="use-btn" id="use-btn"><span>Used something around the house?</span><span>Log it</span></button>
+  </section>
+
+  <section aria-labelledby="h-today">
+    <h2 id="h-today">Today</h2>
+    <ul class="rows" id="today"></ul>
+  </section>
+
+  <section aria-labelledby="h-hl">
+    <h2 id="h-hl">Across the house</h2>
+    <ul class="rows" id="highlights"></ul>
+  </section>
+</div>
+
+<nav aria-label="Main">
+  <div class="in">
+    <button aria-current="page" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
+    <button data-nav="stock"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Stock</button>
+    <button data-nav="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Calendar</button>
+    <button data-nav="baby"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z"/></svg>Baby</button>
+    <button data-nav="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</button>
+  </div>
+</nav>
+
+<div class="page" id="stock-page" role="dialog" aria-modal="true" aria-label="Stock">
+  <div class="pinner">
+    <div class="phead">
+      <button class="pbtn" id="stock-back">Back</button>
+      <h2>Stock</h2>
+      <button class="pbtn strong" id="stock-add">Add item</button>
+    </div>
+    <p class="psum" id="stock-summary"></p>
+    <div class="ptools">
+      <input class="search" id="stock-search" type="search" placeholder="Search items" aria-label="Search items">
+      <button class="pbtn" id="stock-shop">Shopping list</button>
+    </div>
+    <div class="chips" id="stock-chips"></div>
+    <ul class="rows" id="stock-list"></ul>
+  </div>
+</div>
+
+<div class="page" id="chores-page" role="dialog" aria-modal="true" aria-label="Chores">
+  <div class="pinner">
+    <div class="phead">
+      <button class="pbtn" id="chores-back">Back</button>
+      <h2>Chores</h2>
+      <button class="pbtn strong" id="chores-add">Add chore</button>
+    </div>
+    <p class="psum" id="chores-summary"></p>
+    <div class="chips" id="chores-chips"></div>
+    <ul class="rows" id="chores-list"></ul>
+  </div>
+</div>
+
+<div class="page" id="bills-page" role="dialog" aria-modal="true" aria-label="Bills">
+  <div class="pinner">
+    <div class="phead">
+      <button class="pbtn" id="bills-back">Back</button>
+      <h2>Bills</h2>
+      <button class="pbtn strong" id="bills-add">Add bill</button>
+    </div>
+    <p class="psum" id="bills-summary"></p>
+    <ul class="rows" id="bills-list"></ul>
+  </div>
+</div>
+
+<div class="page" id="baby-page" role="dialog" aria-modal="true" aria-label="Baby">
+  <div class="pinner">
+    <div class="phead">
+      <button class="pbtn" id="baby-back">Back</button>
+      <h2>Baby</h2>
+      <button class="pbtn strong" id="baby-add">Log earlier</button>
+    </div>
+    <div class="seg" id="baby-tabs"></div>
+    <div id="baby-body"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="inner">
+    <header>
+      <div><h2 id="sheet-title"></h2><p id="sheet-sub"></p></div>
+      <button class="close" id="close">Done</button>
+    </header>
+    <div class="body" id="sheet-body"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var S = null;          // all household data, loaded from the Google Sheet
+  var mode = null, lastFocus = null;
+
+  // ---------- Helpers ----------
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function isLow(i) { return i.qty <= i.low; }
+  function lowItems() { return S.stock.filter(isLow); }
+  function openChores() { return S.chores.filter(function (c) { return c.status === 'due'; }); }
+  function ago(ms) {
+    if (!ms) return 'Not yet';
+    var m = Math.floor((Date.now() - ms) / 60000);
+    if (m < 1) return 'Just now';
+    if (m < 60) return m + 'm ago';
+    var h = Math.floor(m / 60), r = m % 60;
+    if (h >= 48) return Math.floor(h / 24) + ' days ago';
+    return h + 'h' + (r ? ' ' + r + 'm' : '') + ' ago';
+  }
+  function agoText(ms) { return ms ? ago(ms) : 'not logged yet'; }
+  function dueText(n) { return n < 0 ? 'overdue by ' + plural(-n, 'day', 'days') : n === 0 ? 'due today' : n === 1 ? 'due tomorrow' : 'due in ' + n + ' days'; }
+  function ordinal(n) { var t = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (t[(v - 20) % 10] || t[v] || t[0]); }
+  function choreLabel(c) {
+    if (c.status === 'done') return 'Done today';
+    if (c.status === 'later') return 'Due in ' + plural(c.dueIn, 'day', 'days');
+    return (c.repeat !== 'Daily' && c.dueIn < 0) ? 'Overdue by ' + plural(-c.dueIn, 'day', 'days') : 'Due today';
+  }
+  function toggleChoreLocal(c) {
+    c.done = !c.done; c.status = c.done ? 'done' : 'due'; if (!c.done) c.dueIn = 0;
+    S.weekDone = Math.max(0, S.weekDone + (c.done ? 1 : -1));
+    toast(c.done ? c.name + ': done' : c.name + ': back on the list');
+    call('toggleChore', [c.name]);
+  }
+  function pageOpen() { return stockOpen || choresOpen || billsOpen || babyOpen; }
+  function inDays(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days'; }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+  function nextEvent() {
+    var d = new Date(), mins = d.getHours() * 60 + d.getMinutes(), allDay = null;
+    for (var i = 0; i < S.events.length; i++) {
+      var e = S.events[i];
+      if (e.time === 'All day') { if (!allDay) allDay = e; continue; }
+      var p = e.time.split(':');
+      if (parseInt(p[0], 10) * 60 + parseInt(p[1], 10) > mins) return e;
+    }
+    return allDay;
+  }
+
+  // ---------- Talking to the Google Sheet ----------
+  function call(fn, args) {
+    var r = google.script.run
+      .withSuccessHandler(function () {})
+      .withFailureHandler(function () { toast('Could not save. Refreshing…'); load(); });
+    r[fn].apply(r, args);
+  }
+  function load() {
+    google.script.run
+      .withSuccessHandler(function (d) { S = d; renderAll(); if (!mode) { if (stockOpen) renderStockPage(); if (choresOpen) renderChoresPage(); if (billsOpen) renderBillsPage(); if (babyOpen) renderBabyPage(); } })
+      .withFailureHandler(function () { if (!S) showError(); })
+      .getHomeData();
+  }
+  function showError() {
+    var box = $('summary'); box.innerHTML = '';
+    box.appendChild(el('p', 'big', 'Could not load the household data'));
+    box.appendChild(el('p', 'small', 'Check your internet connection and that the Sheet is shared with you.'));
+    var b = el('button', 'retry', 'Try again'); b.addEventListener('click', function () { box.innerHTML = '<p class="big">Loading your household…</p>'; load(); });
+    box.appendChild(b);
+  }
+
+  // ---------- Header + summary ----------
+  function renderHeader() {
+    var d = new Date(), h = d.getHours();
+    var g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    $('greet').textContent = g + (S && S.me ? ', ' + S.me : '');
+    $('date').textContent = d.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function renderSummary() {
+    var needs = [];
+    if (lowItems().length) needs.push('shopping list');
+    S.bills.forEach(function (b) { if (!b.paid && b.daysLeft <= 3) needs.push(b.name.toLowerCase() + ' bill'); });
+    openChores().forEach(function (c) { needs.push(c.name.toLowerCase()); });
+    if (S.nextClinic && S.nextClinic.daysLeft === 0) needs.push('baby clinic visit');
+    var box = $('summary'); box.innerHTML = '';
+    if (!needs.length) { box.appendChild(el('p', 'big', 'All caught up. Nothing needs you right now.')); return; }
+    box.appendChild(el('p', 'big', needs.length + (needs.length === 1 ? ' thing needs' : ' things need') + ' you today'));
+    var s = needs.join(', '); box.appendChild(el('p', 'small', s.charAt(0).toUpperCase() + s.slice(1)));
+  }
+
+  // ---------- Quick log ----------
+  function renderLast() {
+    $('last-feed').textContent = ago(S.last.feed);
+    $('last-nappy').textContent = ago(S.last.nappy);
+    $('last-sleep').textContent = ago(S.last.sleep);
+  }
+  document.querySelectorAll('[data-log]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (!S) return;
+      var type = b.getAttribute('data-log');
+      S.last[type.toLowerCase()] = Date.now();
+      renderLast(); renderHighlights();
+      toast(type + ' logged');
+      call('logBaby', [type]);
+    });
+  });
+
+  // ---------- Today ----------
+  function renderToday() {
+    var ul = $('today'); ul.innerHTML = '';
+    var todayChores = S.chores.filter(function (c) { return c.status !== 'later'; });
+    if (!S.events.length && !todayChores.length) {
+      var li0 = el('li'); li0.appendChild(el('div', 'empty', 'Nothing planned for today.')); ul.appendChild(li0); return;
+    }
+    S.events.forEach(function (e) {
+      var li = el('li'); var r = el('div', 'row'); r.style.setProperty('--c', 'var(--a-cal)');
+      r.appendChild(el('div', 'time', e.time === 'All day' ? 'All day' : e.time));
+      var m = el('div', 'main'); m.appendChild(el('div', 'title', e.title)); if (e.sub) m.appendChild(el('div', 'sub', e.sub));
+      r.appendChild(m); li.appendChild(r); ul.appendChild(li);
+    });
+    todayChores.forEach(function (c) {
+      var li = el('li'); var b = el('button', 'row' + (c.done ? ' done' : '')); b.style.setProperty('--c', 'var(--a-chore)');
+      b.setAttribute('aria-pressed', c.done ? 'true' : 'false');
+      var tick = el('span', 'tick'); tick.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';
+      var m = el('div', 'main'); m.appendChild(el('div', 'title', c.name)); m.appendChild(el('div', 'sub', choreLabel(c)));
+      b.appendChild(tick); b.appendChild(m); if (c.who) b.appendChild(el('span', 'tag', c.who));
+      b.addEventListener('click', function () {
+        toggleChoreLocal(c);
+        renderSummary(); renderToday(); renderHighlights();
+      });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+
+  // ---------- Highlights from every area ----------
+  function renderHighlights() {
+    var low = lowItems(), open = openChores(), ne = nextEvent();
+    var unpaid = S.bills.filter(function (b) { return !b.paid; }).sort(function (a, b) { return a.daysLeft - b.daysLeft; });
+    var rem = S.reminders;
+    var rows = [];
+
+    rows.push({ area: 'Baby', c: '--a-baby',
+      title: 'Last feed ' + agoText(S.last.feed),
+      sub: S.nextClinic ? 'Next clinic: ' + S.nextClinic.what + ' ' + inDays(S.nextClinic.daysLeft) : 'Nappy ' + agoText(S.last.nappy) + ', sleep ' + agoText(S.last.sleep),
+      chip: S.nextClinic && S.nextClinic.daysLeft <= 3 ? 'Clinic soon' : '', type: 'warn', act: 'baby' });
+
+    if (!S.calendarFound) {
+      rows.push({ area: 'Calendar', c: '--a-cal', title: 'Family calendar not linked yet', sub: 'We set this up in a later step', chip: 'Set up', type: '', act: 'calendar' });
+    } else {
+      rows.push({ area: 'Calendar', c: '--a-cal',
+        title: ne ? 'Next: ' + ne.title + (ne.time === 'All day' ? ' (all day)' : ', ' + ne.time) : (S.events.length ? 'Nothing more today' : 'Nothing on today'),
+        sub: plural(S.events.length, 'event', 'events') + ' today',
+        chip: S.events.length + ' today', type: '', act: 'calendar' });
+    }
+
+    rows.push({ area: 'Meals', c: '--a-meal',
+      title: S.meals.tonight ? 'Tonight: ' + S.meals.tonight : 'No dinner planned tonight',
+      sub: S.meals.tomorrow ? 'Tomorrow: ' + S.meals.tomorrow : 'Add meals in the Meals tab of the Sheet',
+      chip: S.meals.tonight ? 'Planned' : 'Plan', type: S.meals.tonight ? 'ok' : '', act: 'meals' });
+
+    rows.push({ area: 'Stock and shopping', c: '--a-stock',
+      title: low.length ? plural(low.length, 'item', 'items') + ' running low' : 'Everything is stocked',
+      sub: low.length ? low.slice(0, 3).map(function (i) { return i.item; }).join(', ') + (low.length > 3 ? '…' : '') : 'Nothing on the shopping list',
+      chip: low.length ? 'Shopping list' : 'All good', type: low.length ? 'warn' : 'ok', act: low.length ? 'shop' : 'stock' });
+
+    rows.push({ area: 'Chores', c: '--a-chore',
+      title: open.length ? plural(open.length, 'chore', 'chores') + ' open today' : (S.chores.some(function (c) { return c.status === 'done'; }) ? 'All chores done today' : (S.chores.length ? 'Nothing due today' : 'No chores set up')),
+      sub: S.weekDone + ' of ' + S.weekTotal + ' done this week',
+      chip: open.length ? 'Open' : 'Done', type: open.length ? '' : 'ok', act: 'chores' });
+
+    if (unpaid.length) {
+      rows.push({ area: 'Bills', c: '--a-bill',
+        title: unpaid[0].name + ' ' + dueText(unpaid[0].daysLeft),
+        sub: unpaid.length > 1 ? (unpaid.length - 1) + ' more to pay this month' : 'Everything else is paid',
+        chip: unpaid[0].daysLeft < 0 ? 'Overdue' : unpaid[0].daysLeft <= 3 ? 'Due soon' : 'To pay', type: unpaid[0].daysLeft <= 3 ? 'warn' : '', act: 'bills' });
+    } else {
+      rows.push({ area: 'Bills', c: '--a-bill', title: 'All bills paid this month', sub: 'Nothing due', chip: 'Paid', type: 'ok', act: 'bills' });
+    }
+
+    if (rem.length) {
+      var r0 = rem[0], r1 = rem[1];
+      rows.push({ area: 'Home and renewals', c: '--a-admin',
+        title: r0.name + (r0.daysLeft < 0 ? ' is overdue' : ' ' + inDays(r0.daysLeft)),
+        sub: r1 ? r1.name + ' ' + inDays(r1.daysLeft) : 'Nothing else coming up',
+        chip: r0.daysLeft <= 7 ? 'Soon' : 'Reminder', type: r0.daysLeft <= 7 ? 'warn' : '', act: 'reminders' });
+    } else {
+      rows.push({ area: 'Home and renewals', c: '--a-admin', title: 'No reminders coming up', sub: 'Add them in the Reminders tab of the Sheet', chip: 'All good', type: 'ok', act: 'reminders' });
+    }
+
+    rows.push({ area: 'Smart home', c: '--a-smart',
+      title: 'Google Assistant not linked yet', sub: 'Once linked: add to the shopping list by voice',
+      chip: 'Set up', type: '', act: 'smart' });
+
+    var ul = $('highlights'); ul.innerHTML = '';
+    rows.forEach(function (r) {
+      var li = el('li'); var b = el('button', 'row hl'); b.style.setProperty('--c', 'var(' + r.c + ')');
+      var m = el('div', 'main');
+      m.appendChild(el('div', 'area', r.area)); m.appendChild(el('div', 'title', r.title)); m.appendChild(el('div', 'sub', r.sub));
+      b.appendChild(m); if (r.chip) b.appendChild(el('span', 'tag ' + r.type, r.chip));
+      b.addEventListener('click', function () { go(r.act); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+
+  // ---------- Sheet (use stock / shopping list / bills) ----------
+  function openSheet(m) {
+    if (!S) return;
+    mode = m; lastFocus = document.activeElement;
+    renderSheet();
+    $('scrim').classList.add('open'); $('sheet').classList.add('open');
+    $('close').focus();
+  }
+  function closeSheet() {
+    $('scrim').classList.remove('open'); $('sheet').classList.remove('open'); mode = null;
+    renderAll();
+    if (stockOpen) renderStockPage();
+    if (choresOpen) renderChoresPage();
+    if (billsOpen) renderBillsPage();
+    if (babyOpen) renderBabyPage();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function renderSheet() {
+    var body = $('sheet-body'); body.innerHTML = '';
+    $('close').textContent = (mode !== 'use' && mode !== 'shop' && mode !== 'bills') ? 'Cancel' : 'Done';
+    if (mode === 'use') {
+      $('sheet-title').textContent = 'What did you use?';
+      $('sheet-sub').textContent = 'Tap an item to take one off the stock.';
+      if (!S.stock.length) { body.appendChild(el('div', 'empty', 'No items yet. Add them in the Stock tab of the Sheet.')); return; }
+      S.stock.forEach(function (i) {
+        var b = el('button', 'item'); b.appendChild(el('span', 'nm', i.item));
+        b.appendChild(el('span', 'qty' + (isLow(i) ? ' low' : ''), i.qty + ' ' + i.unit));
+        b.appendChild(el('span', 'act', 'Use 1'));
+        b.addEventListener('click', function () {
+          if (i.qty <= 0) { toast(i.item + ' is finished'); return; }
+          var wasLow = isLow(i); i.qty -= 1;
+          toast(!wasLow && isLow(i) ? i.item + ' added to the shopping list' : i.item + ': ' + i.qty + ' ' + i.unit + ' left');
+          renderSheet();
+          call('useItem', [i.item]);
+        });
+        body.appendChild(b);
+      });
+    } else if (mode === 'shop') {
+      var low = lowItems();
+      $('sheet-title').textContent = 'Shopping list';
+      $('sheet-sub').textContent = 'Items that ran low are added here automatically.';
+      if (!low.length) { body.appendChild(el('div', 'empty', 'Nothing to buy. Everything is above its low-stock level.')); return; }
+      low.forEach(function (i) {
+        var b = el('button', 'item'); b.appendChild(el('span', 'nm', i.item));
+        b.appendChild(el('span', 'qty', 'Buy ' + i.buy + ' ' + i.unit));
+        b.appendChild(el('span', 'act', 'Bought'));
+        b.addEventListener('click', function () {
+          i.qty += i.buy; toast(i.item + ' restocked'); renderSheet();
+          call('restockItem', [i.item]);
+        });
+        body.appendChild(b);
+      });
+    } else if (mode === 'form') {
+      buildForm(body);
+    } else if (mode === 'chore-form') {
+      buildChoreForm(body);
+    } else if (mode === 'bill-form') {
+      buildBillForm(body);
+    } else if (mode === 'baby-log-form') {
+      buildLogForm(body);
+    } else if (mode === 'entry-form') {
+      buildEntryForm(body);
+    } else if (mode === 'clinic-form') {
+      buildClinicForm(body);
+    } else if (mode === 'growth-form') {
+      buildGrowthForm(body);
+    } else if (mode === 'bills') {
+      $('sheet-title').textContent = 'Bills this month';
+      $('sheet-sub').textContent = 'Tap a bill once you have paid it.';
+      if (!S.bills.length) { body.appendChild(el('div', 'empty', 'No bills yet. Add them in the Bills tab of the Sheet.')); return; }
+      S.bills.slice().sort(function (a, b) { return (a.paid - b.paid) || (a.daysLeft - b.daysLeft); }).forEach(function (bl) {
+        var b = el('button', 'item'); b.appendChild(el('span', 'nm', bl.name));
+        b.appendChild(el('span', 'qty', bl.paid ? 'Paid' : 'Due ' + inDays(bl.daysLeft)));
+        b.appendChild(el('span', 'act', bl.paid ? '' : 'Mark paid'));
+        if (bl.paid) b.disabled = true;
+        b.addEventListener('click', function () {
+          if (bl.paid) return;
+          bl.paid = true; toast(bl.name + ': marked paid'); renderSheet();
+          call('markBillPaid', [bl.name]);
+        });
+        body.appendChild(b);
+      });
+    }
+  }
+  $('use-btn').addEventListener('click', function () { openSheet('use'); });
+  $('close').addEventListener('click', closeSheet);
+  $('scrim').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (mode) closeSheet(); else if (stockOpen) closeStock(); else if (choresOpen) hideChoresPage(); else if (billsOpen) hideBillsPage(); else if (babyOpen) hideBabyPage();
+  });
+
+  // ---------- Stock page ----------
+  var stockOpen = false, stockFilter = 'all', stockSearch = '', editing = null, formItem = null, lastFocusPage = null;
+
+  function level(i) {
+    var target = Math.max(i.qty, i.low + i.buy, i.low * 2, 1);
+    return { pct: Math.min(100, Math.round(i.qty / target * 100)), mark: Math.min(100, Math.round(i.low / target * 100)) };
+  }
+  function errToast(err) { toast(((err && err.message) || 'Could not save').replace(/^(Error|Exception):\s*/, '')); }
+
+  function openStock() {
+    if (!S) return;
+    stockOpen = true; stockFilter = 'all'; stockSearch = ''; $('stock-search').value = '';
+    lastFocusPage = document.activeElement;
+    $('stock-page').classList.add('open'); document.body.style.overflow = 'hidden';
+    renderStockPage(); $('stock-back').focus();
+  }
+  function closeStock() {
+    stockOpen = false; $('stock-page').classList.remove('open'); document.body.style.overflow = '';
+    renderAll();
+    if (lastFocusPage && lastFocusPage.focus) lastFocusPage.focus();
+  }
+  function stockSummary() {
+    var n = lowItems().length;
+    $('stock-summary').textContent = S.stock.length ? plural(S.stock.length, 'item', 'items') + ' tracked, ' + n + ' running low' : 'No items yet';
+    $('stock-shop').textContent = 'Shopping list (' + n + ')';
+  }
+  function renderStockPage() { stockSummary(); renderChips(); renderStockList(); }
+
+  function renderChips() {
+    var box = $('stock-chips'); box.innerHTML = '';
+    var cats = []; S.stock.forEach(function (i) { if (cats.indexOf(i.category) < 0) cats.push(i.category); });
+    cats.sort();
+    if (stockFilter.indexOf('cat:') === 0 && cats.indexOf(stockFilter.slice(4)) < 0) stockFilter = 'all';
+    var opts = [{ k: 'all', l: 'All' }, { k: 'low', l: 'Running low' }].concat(cats.map(function (c) { return { k: 'cat:' + c, l: c }; }));
+    opts.forEach(function (o) {
+      var b = el('button', 'chip' + (stockFilter === o.k ? ' on' : ''), o.l);
+      b.setAttribute('aria-pressed', stockFilter === o.k ? 'true' : 'false');
+      b.addEventListener('click', function () { stockFilter = o.k; renderChips(); renderStockList(); });
+      box.appendChild(b);
+    });
+  }
+
+  function renderStockList() {
+    var ul = $('stock-list'); ul.innerHTML = '';
+    var q = stockSearch.trim().toLowerCase();
+    var items = S.stock.filter(function (i) {
+      if (stockFilter === 'low' && !isLow(i)) return false;
+      if (stockFilter.indexOf('cat:') === 0 && i.category !== stockFilter.slice(4)) return false;
+      if (q && (i.item + ' ' + i.category).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort(function (a, b) {
+      return (isLow(b) - isLow(a)) || a.category.localeCompare(b.category) || a.item.localeCompare(b.item);
+    });
+    if (!items.length) {
+      var li0 = el('li'); li0.appendChild(el('div', 'empty', S.stock.length ? 'No items match.' : 'No items yet. Tap Add item to start.')); ul.appendChild(li0); return;
+    }
+    items.forEach(function (i) { ul.appendChild(stockRow(i)); });
+  }
+
+  function stockRow(i) {
+    var li = el('li'), row = el('div', 'row srow');
+    var main = el('button', 'smain'); main.setAttribute('aria-label', 'Edit ' + i.item);
+    var top = el('div', 'stop'), tag = el('span', 'tag warn', 'Low');
+    top.appendChild(el('span', 'title', i.item)); top.appendChild(tag);
+    var bar = el('div', 'bar'), fill = el('div', 'fill'), mark = el('div', 'mark');
+    bar.appendChild(fill); bar.appendChild(mark);
+    main.appendChild(top); main.appendChild(el('div', 'sub', i.category)); main.appendChild(bar);
+    main.addEventListener('click', function () { openForm(i.item); });
+
+    var step = el('div', 'step');
+    var minus = el('button', 'stepbtn', '\u2212'); minus.setAttribute('aria-label', 'Take one off ' + i.item);
+    var plus = el('button', 'stepbtn', '+'); plus.setAttribute('aria-label', 'Add one to ' + i.item);
+    var qty = el('div', 'sqty'), qn = el('div', 'sq-n');
+    qty.appendChild(qn); qty.appendChild(el('div', 'sq-u', i.unit));
+    step.appendChild(minus); step.appendChild(qty); step.appendChild(plus);
+
+    function refresh() {
+      qn.textContent = i.qty;
+      var lv = level(i), low = isLow(i);
+      fill.style.width = lv.pct + '%'; mark.style.left = lv.mark + '%';
+      fill.className = 'fill' + (low ? ' low' : '');
+      tag.style.display = low ? '' : 'none';
+      row.style.setProperty('--c', low ? 'var(--warn)' : 'var(--a-stock)');
+    }
+    function change(d) {
+      if (d < 0 && i.qty <= 0) return;
+      i.qty += d; refresh(); stockSummary();
+      call('adjustStock', [i.item, d]);
+    }
+    minus.addEventListener('click', function () { change(-1); });
+    plus.addEventListener('click', function () { change(1); });
+    row.appendChild(main); row.appendChild(step); li.appendChild(row); refresh();
+    return li;
+  }
+
+  // ----- Add / edit form -----
+  function openForm(name) {
+    editing = name;
+    var found = name ? S.stock.filter(function (x) { return x.item === name; })[0] : null;
+    formItem = found || { item: '', category: '', unit: '', qty: 0, low: 1, buy: 1 };
+    openSheet('form');
+  }
+  function fieldEl(label, id, type, val, hint, extra) {
+    var d = el('div', 'field'), l = el('label', null, label); l.setAttribute('for', id);
+    var inp = el('input'); inp.id = id; inp.type = type; inp.value = val;
+    if (type === 'number') { inp.min = '0'; inp.setAttribute('inputmode', 'numeric'); }
+    if (extra) Object.keys(extra).forEach(function (k) { inp.setAttribute(k, extra[k]); });
+    d.appendChild(l); d.appendChild(inp);
+    if (hint) d.appendChild(el('div', 'hint', hint));
+    return d;
+  }
+  function normItem(d) {
+    return { item: d.item.trim(), category: d.category.trim() || 'General', unit: d.unit.trim() || 'pcs',
+      qty: Math.max(0, Number(d.qty) || 0), low: Math.max(0, Number(d.low) || 0), buy: Math.max(0, Number(d.buy) || 0) };
+  }
+  function buildForm(body) {
+    var f = formItem;
+    $('sheet-title').textContent = editing ? 'Edit item' : 'Add an item';
+    $('sheet-sub').textContent = 'Fill in the details, then tap Save.';
+    var cats = []; S.stock.forEach(function (i) { if (cats.indexOf(i.category) < 0) cats.push(i.category); });
+    var dl = el('datalist'); dl.id = 'cats';
+    cats.forEach(function (c) { var o = el('option'); o.value = c; dl.appendChild(o); });
+    body.appendChild(dl);
+    body.appendChild(fieldEl('Name', 'f-item', 'text', f.item, '', { placeholder: 'e.g. Rice', autocomplete: 'off' }));
+    body.appendChild(fieldEl('Category', 'f-cat', 'text', f.category, '', { list: 'cats', placeholder: 'e.g. Food, Baby, Cleaning', autocomplete: 'off' }));
+    body.appendChild(fieldEl('Unit', 'f-unit', 'text', f.unit, '', { placeholder: 'e.g. pcs, packs, L', autocomplete: 'off' }));
+    body.appendChild(fieldEl('In stock now', 'f-qty', 'number', f.qty));
+    body.appendChild(fieldEl('Running low at', 'f-low', 'number', f.low, 'It goes on the shopping list at or below this number.'));
+    body.appendChild(fieldEl('Buy this many', 'f-buy', 'number', f.buy, 'Added to your stock when you tap Bought on the shopping list.'));
+
+    var btns = el('div', 'formbtns');
+    var save = el('button', 'savebtn', 'Save');
+    save.addEventListener('click', function () {
+      var data = { item: $('f-item').value, category: $('f-cat').value, unit: $('f-unit').value, qty: $('f-qty').value, low: $('f-low').value, buy: $('f-buy').value };
+      if (!data.item.trim()) { toast('Please enter a name'); return; }
+      save.disabled = true; save.textContent = 'Saving\u2026';
+      var fn = editing ? 'updateStockItem' : 'addStockItem', args = editing ? [editing, data] : [data];
+      var r = google.script.run
+        .withSuccessHandler(function () {
+          var n = normItem(data);
+          if (editing) {
+            var t = S.stock.filter(function (x) { return x.item === editing; })[0];
+            if (t) { t.item = n.item; t.category = n.category; t.unit = n.unit; t.qty = n.qty; t.low = n.low; t.buy = n.buy; }
+          } else { S.stock.push(n); }
+          toast(editing ? 'Saved' : n.item + ' added');
+          closeSheet(); load();
+        })
+        .withFailureHandler(function (err) { errToast(err); save.disabled = false; save.textContent = 'Save'; });
+      r[fn].apply(r, args);
+    });
+    btns.appendChild(save);
+    if (editing) {
+      var del = el('button', 'delbtn', 'Delete item'), armed = false;
+      del.addEventListener('click', function () {
+        if (!armed) { armed = true; del.textContent = 'Tap again to delete'; return; }
+        del.disabled = true;
+        google.script.run
+          .withSuccessHandler(function () {
+            S.stock = S.stock.filter(function (x) { return x.item !== editing; });
+            toast(editing + ' deleted'); closeSheet(); load();
+          })
+          .withFailureHandler(function (err) { errToast(err); del.disabled = false; })
+          .deleteStockItem(editing);
+      });
+      btns.appendChild(del);
+    }
+    body.appendChild(btns);
+  }
+
+  $('stock-back').addEventListener('click', closeStock);
+  $('stock-add').addEventListener('click', function () { openForm(null); });
+  $('stock-shop').addEventListener('click', function () { openSheet('shop'); });
+  $('stock-search').addEventListener('input', function (e) { stockSearch = e.target.value; renderStockList(); });
+
+  // ---------- Shared form helpers ----------
+  function selectEl(label, id, options, val) {
+    var d = el('div', 'field'), l = el('label', null, label); l.setAttribute('for', id);
+    var sel = el('select'); sel.id = id;
+    options.forEach(function (o) { var op = el('option', null, o.l); op.value = o.v; if (o.v === val) op.selected = true; sel.appendChild(op); });
+    d.appendChild(l); d.appendChild(sel); return d;
+  }
+  function formButtons(body, cfg) {
+    var btns = el('div', 'formbtns'), save = el('button', 'savebtn', 'Save');
+    save.addEventListener('click', function () {
+      var data = cfg.read(); if (!data) return;
+      save.disabled = true; save.textContent = 'Saving\u2026';
+      var r = google.script.run
+        .withSuccessHandler(function () {
+          if (cfg.apply) cfg.apply(data);
+          toast(cfg.editing ? 'Saved' : (cfg.addedText ? cfg.addedText(data) : data[cfg.nameKey].trim() + ' added'));
+          closeSheet(); load(); if (cfg.after) cfg.after();
+        })
+        .withFailureHandler(function (err) { errToast(err); save.disabled = false; save.textContent = 'Save'; });
+      var fn = cfg.editing ? cfg.updateFn : cfg.addFn;
+      var args = cfg.editing ? (cfg.updateArgs ? cfg.updateArgs(data) : [cfg.editing, data]) : (cfg.addArgs ? cfg.addArgs(data) : [data]);
+      r[fn].apply(r, args);
+    });
+    btns.appendChild(save);
+    if (cfg.editing) {
+      var del = el('button', 'delbtn', cfg.deleteLabel), armed = false;
+      del.addEventListener('click', function () {
+        if (!armed) { armed = true; del.textContent = 'Tap again to delete'; return; }
+        del.disabled = true;
+        var d = google.script.run
+          .withSuccessHandler(function () {
+            if (cfg.remove) cfg.remove();
+            toast(cfg.deletedText || (cfg.editing + ' deleted')); closeSheet(); load(); if (cfg.after) cfg.after();
+          })
+          .withFailureHandler(function (err) { errToast(err); del.disabled = false; });
+        d[cfg.deleteFn].apply(d, cfg.deleteArgs ? cfg.deleteArgs() : [cfg.editing]);
+      });
+      btns.appendChild(del);
+    }
+    body.appendChild(btns);
+  }
+
+  // ---------- Chores page ----------
+  var choresOpen = false, choreFilter = 'all', editingChore = null, choreDraft = null, lastFocusChores = null;
+  var TICK_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';
+
+  function showChoresPage() {
+    if (!S) return;
+    choresOpen = true; choreFilter = 'all'; lastFocusChores = document.activeElement;
+    $('chores-page').classList.add('open'); document.body.style.overflow = 'hidden';
+    renderChoresPage(); $('chores-back').focus();
+  }
+  function hideChoresPage() {
+    choresOpen = false; $('chores-page').classList.remove('open'); document.body.style.overflow = '';
+    renderAll(); if (lastFocusChores && lastFocusChores.focus) lastFocusChores.focus();
+  }
+  function renderChoresPage() {
+    var due = S.chores.filter(function (c) { return c.status === 'due'; });
+    var done = S.chores.filter(function (c) { return c.status === 'done'; });
+    var later = S.chores.filter(function (c) { return c.status === 'later'; });
+    $('chores-summary').textContent = S.chores.length ? due.length + ' due today, ' + done.length + ' done, ' + later.length + ' coming up' : 'No chores yet';
+
+    var box = $('chores-chips'); box.innerHTML = '';
+    var opts = [{ k: 'all', l: 'All' }].concat(S.people.map(function (p) { return { k: p, l: p }; }));
+    if (S.chores.some(function (c) { return !c.who; })) opts.push({ k: '__anyone', l: 'Anyone' });
+    opts.forEach(function (o) {
+      var b = el('button', 'chip' + (choreFilter === o.k ? ' on' : ''), o.l);
+      b.setAttribute('aria-pressed', choreFilter === o.k ? 'true' : 'false');
+      b.addEventListener('click', function () { choreFilter = o.k; renderChoresPage(); });
+      box.appendChild(b);
+    });
+
+    function mine(c) { return choreFilter === 'all' || (choreFilter === '__anyone' ? !c.who : c.who === choreFilter); }
+    var ul = $('chores-list'); ul.innerHTML = '';
+    var shown = 0;
+    [['Due today', due], ['Done today', done], ['Coming up', later.slice().sort(function (a, b) { return a.dueIn - b.dueIn; })]].forEach(function (sec) {
+      var items = sec[1].filter(mine); if (!items.length) return;
+      ul.appendChild(el('li', 'sechead', sec[0]));
+      items.forEach(function (c) { ul.appendChild(choreRow(c)); shown++;});
+    });
+    if (!shown) { var li0 = el('li'); li0.appendChild(el('div', 'empty', S.chores.length ? 'No chores for this person.' : 'No chores yet. Tap Add chore to start.')); ul.appendChild(li0); }
+  }
+  function choreRow(c) {
+    var li = el('li'), row = el('div', 'row' + (c.done ? ' done' : '')); row.style.setProperty('--c', 'var(--a-chore)');
+    var tick = el('button', 'tick tickbtn'); tick.innerHTML = TICK_SVG;
+    tick.setAttribute('aria-label', (c.done ? 'Mark not done: ' : 'Mark done: ') + c.name);
+    tick.addEventListener('click', function () { toggleChoreLocal(c); renderChoresPage(); });
+    var main = el('button', 'smain'); main.setAttribute('aria-label', 'Edit ' + c.name);
+    main.appendChild(el('div', 'title', c.name));
+    main.appendChild(el('div', 'sub', choreLabel(c) + ', ' + c.repeat.toLowerCase()));
+    main.addEventListener('click', function () { openChoreForm(c.name); });
+    row.appendChild(tick); row.appendChild(main);
+    if (c.who) row.appendChild(el('span', 'tag', c.who));
+    li.appendChild(row); return li;
+  }
+  function openChoreForm(name) {
+    editingChore = name;
+    var found = name ? S.chores.filter(function (x) { return x.name === name; })[0] : null;
+    choreDraft = found || { name: '', who: '', repeat: 'Weekly' };
+    openSheet('chore-form');
+  }
+  function buildChoreForm(body) {
+    var f = choreDraft;
+    $('sheet-title').textContent = editingChore ? 'Edit chore' : 'Add a chore';
+    $('sheet-sub').textContent = 'Fill in the details, then tap Save.';
+    var who = [{ v: '', l: 'Anyone' }].concat(S.people.map(function (p) { return { v: p, l: p }; }));
+    if (f.who && S.people.indexOf(f.who) < 0) who.push({ v: f.who, l: f.who });
+    body.appendChild(fieldEl('Chore', 'c-name', 'text', f.name, '', { placeholder: 'e.g. Wash the car', autocomplete: 'off' }));
+    body.appendChild(selectEl('Who does it', 'c-who', who, f.who));
+    body.appendChild(selectEl('How often', 'c-rep', [{ v: 'Daily', l: 'Every day' }, { v: 'Weekly', l: 'Every week' }, { v: 'Monthly', l: 'Every month' }], f.repeat));
+    formButtons(body, {
+      editing: editingChore, nameKey: 'name', addFn: 'addChore', updateFn: 'updateChore', deleteFn: 'deleteChore', deleteLabel: 'Delete chore',
+      read: function () {
+        var d = { name: $('c-name').value, who: $('c-who').value, repeat: $('c-rep').value };
+        if (!d.name.trim()) { toast('Please enter a name'); return null; }
+        return d;
+      },
+      apply: function (d) {
+        d.name = d.name.trim();
+        if (editingChore) {
+          var t = S.chores.filter(function (x) { return x.name === editingChore; })[0];
+          if (t) { t.name = d.name; t.who = d.who; t.repeat = d.repeat; }
+        } else { S.chores.push({ name: d.name, who: d.who, repeat: d.repeat, done: false, status: 'due', dueIn: 0 }); }
+      },
+      remove: function () { S.chores = S.chores.filter(function (x) { return x.name !== editingChore; }); }
+    });
+  }
+  $('chores-back').addEventListener('click', hideChoresPage);
+  $('chores-add').addEventListener('click', function () { openChoreForm(null); });
+
+  // ---------- Bills page ----------
+  var billsOpen = false, editingBill = null, billDraft = null, lastFocusBills = null;
+
+  function showBillsPage() {
+    if (!S) return;
+    billsOpen = true; lastFocusBills = document.activeElement;
+    $('bills-page').classList.add('open'); document.body.style.overflow = 'hidden';
+    renderBillsPage(); $('bills-back').focus();
+  }
+  function hideBillsPage() {
+    billsOpen = false; $('bills-page').classList.remove('open'); document.body.style.overflow = '';
+    renderAll(); if (lastFocusBills && lastFocusBills.focus) lastFocusBills.focus();
+  }
+  function renderBillsPage() {
+    var unpaid = S.bills.filter(function (b) { return !b.paid; }).sort(function (a, b) { return a.daysLeft - b.daysLeft; });
+    var paid = S.bills.filter(function (b) { return b.paid; }).sort(function (a, b) { return a.due - b.due; });
+    $('bills-summary').textContent = S.bills.length ? unpaid.length + ' to pay this month, ' + paid.length + ' paid' : 'No bills yet';
+    var ul = $('bills-list'); ul.innerHTML = '';
+    if (!S.bills.length) { var li0 = el('li'); li0.appendChild(el('div', 'empty', 'No bills yet. Tap Add bill to start.')); ul.appendChild(li0); return; }
+    if (unpaid.length) { ul.appendChild(el('li', 'sechead', 'To pay')); unpaid.forEach(function (b) { ul.appendChild(billRow(b)); }); }
+    if (paid.length) { ul.appendChild(el('li', 'sechead', 'Paid this month')); paid.forEach(function (b) { ul.appendChild(billRow(b)); }); }
+  }
+  function billRow(b) {
+    var li = el('li'), row = el('div', 'row' + (b.paid ? ' done' : '')); row.style.setProperty('--c', 'var(--a-bill)');
+    var tick = el('button', 'tick tickbtn'); tick.innerHTML = TICK_SVG;
+    tick.setAttribute('aria-label', (b.paid ? 'Mark not paid: ' : 'Mark paid: ') + b.name);
+    tick.addEventListener('click', function () {
+      b.paid = !b.paid; toast(b.paid ? b.name + ': marked paid' : b.name + ': back to not paid');
+      renderBillsPage(); call('toggleBillPaid', [b.name]);
+    });
+    var main = el('button', 'smain'); main.setAttribute('aria-label', 'Edit ' + b.name);
+    main.appendChild(el('div', 'title', b.name));
+    main.appendChild(el('div', 'sub', 'Due on the ' + ordinal(b.due) + (b.paid ? '' : ', ' + dueText(b.daysLeft))));
+    main.addEventListener('click', function () { openBillForm(b.name); });
+    row.appendChild(tick); row.appendChild(main);
+    if (b.paid) row.appendChild(el('span', 'tag ok', 'Paid'));
+    else if (b.daysLeft < 0) row.appendChild(el('span', 'tag warn', 'Overdue'));
+    else if (b.daysLeft <= 3) row.appendChild(el('span', 'tag warn', 'Due soon'));
+    li.appendChild(row); return li;
+  }
+  function openBillForm(name) {
+    editingBill = name;
+    var found = name ? S.bills.filter(function (x) { return x.name === name; })[0] : null;
+    billDraft = found || { name: '', due: 1 };
+    openSheet('bill-form');
+  }
+  function buildBillForm(body) {
+    var f = billDraft;
+    $('sheet-title').textContent = editingBill ? 'Edit bill' : 'Add a bill';
+    $('sheet-sub').textContent = 'Fill in the details, then tap Save.';
+    body.appendChild(fieldEl('Bill', 'b-name', 'text', f.name, '', { placeholder: 'e.g. Water', autocomplete: 'off' }));
+    body.appendChild(fieldEl('Due on day of the month', 'b-due', 'number', f.due, 'Enter a number from 1 to 31.', { max: '31', min: '1' }));
+    formButtons(body, {
+      editing: editingBill, nameKey: 'name', addFn: 'addBill', updateFn: 'updateBill', deleteFn: 'deleteBill', deleteLabel: 'Delete bill',
+      read: function () {
+        var d = { name: $('b-name').value, due: $('b-due').value };
+        if (!d.name.trim()) { toast('Please enter a name'); return null; }
+        return d;
+      },
+      apply: function (d) {
+        d.name = d.name.trim(); var due = Math.min(31, Math.max(1, Math.round(Number(d.due) || 1)));
+        if (editingBill) {
+          var t = S.bills.filter(function (x) { return x.name === editingBill; })[0];
+          if (t) { t.name = d.name; t.due = due; t.daysLeft = due - new Date().getDate(); }
+        } else { S.bills.push({ name: d.name, due: due, paid: false, daysLeft: due - new Date().getDate() }); }
+      },
+      remove: function () { S.bills = S.bills.filter(function (x) { return x.name !== editingBill; }); }
+    });
+  }
+  $('bills-back').addEventListener('click', hideBillsPage);
+  $('bills-add').addEventListener('click', function () { openBillForm(null); });
+
+  // ---------- Baby page ----------
+  var babyOpen = false, babyTab = 'today', B = null, babyError = false, lastFocusBaby = null, entryDraft = null, clinicDraft = null, growthDraft = null;
+  var TYPE_COLOR = { Feed: 'var(--accent)', Nappy: 'var(--sun)', Sleep: 'var(--night)' };
+
+  function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false }); }
+  function fmtDate(ds) { return new Date(ds + 'T12:00:00').toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  function dayLabel(d) {
+    var t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+    if (d.toDateString() === t.toDateString()) return 'Today';
+    if (d.toDateString() === y.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function todayInput() { return new Date().toISOString().slice(0, 10); }
+
+  function showBabyPage() {
+    if (!S) return;
+    babyOpen = true; babyTab = 'today'; lastFocusBaby = document.activeElement;
+    $('baby-page').classList.add('open'); document.body.style.overflow = 'hidden';
+    renderBabyPage(); loadBaby(); $('baby-back').focus();
+  }
+  function hideBabyPage() {
+    babyOpen = false; $('baby-page').classList.remove('open'); document.body.style.overflow = '';
+    renderAll(); if (lastFocusBaby && lastFocusBaby.focus) lastFocusBaby.focus();
+  }
+  function loadBaby() {
+    google.script.run
+      .withSuccessHandler(function (d) { B = d; babyError = false; if (babyOpen && !mode) renderBabyPage(); })
+      .withFailureHandler(function () { babyError = true; if (babyOpen && !B && !mode) renderBabyPage(); })
+      .getBabyData();
+  }
+  function renderBabyPage() {
+    var tabs = $('baby-tabs'); tabs.innerHTML = '';
+    [['today', 'Today'], ['clinic', 'Clinic'], ['growth', 'Growth']].forEach(function (t) {
+      var b = el('button', 'segbtn' + (babyTab === t[0] ? ' on' : ''), t[1]);
+      b.setAttribute('aria-pressed', babyTab === t[0] ? 'true' : 'false');
+      b.addEventListener('click', function () { babyTab = t[0]; renderBabyPage(); });
+      tabs.appendChild(b);
+    });
+    $('baby-add').textContent = babyTab === 'today' ? 'Log earlier' : babyTab === 'clinic' ? 'Add visit' : 'Add entry';
+    var box = $('baby-body'); box.innerHTML = '';
+    if (!B) {
+      if (babyError) {
+        box.appendChild(el('div', 'empty', 'Could not load. Check your internet connection.'));
+        var rb = el('button', 'retry', 'Try again');
+        rb.addEventListener('click', function () { babyError = false; renderBabyPage(); loadBaby(); });
+        box.appendChild(rb);
+      } else { box.appendChild(el('div', 'empty', 'Loading\u2026')); }
+      return;
+    }
+    if (babyTab === 'today') babyToday(box); else if (babyTab === 'clinic') babyClinic(box); else babyGrowth(box);
+  }
+  $('baby-back').addEventListener('click', hideBabyPage);
+  $('baby-add').addEventListener('click', function () {
+    if (!B) return;
+    if (babyTab === 'today') openLogForm(); else if (babyTab === 'clinic') openClinicForm(null); else openGrowthForm(null);
+  });
+
+  // ----- Today tab -----
+  function logNow(type) {
+    var k = type.toLowerCase(), ts = Date.now();
+    S.last[k] = ts;
+    if (B) B.log.unshift({ row: 0, ts: ts, type: type, by: S.me });
+    toast(type + ' logged'); renderBabyPage(); renderHighlights();
+    google.script.run
+      .withSuccessHandler(function () { loadBaby(); })
+      .withFailureHandler(function () { toast('Could not save. Refreshing\u2026'); load(); loadBaby(); })
+      .logBaby(type);
+  }
+  function babyToday(box) {
+    var log = el('div', 'log');
+    [['Feed', 'feed', 'b-feed'], ['Nappy', 'nappy', 'b-nappy'], ['Sleep', 'sleep', 'b-sleep']].forEach(function (x) {
+      var b = el('button', x[2]); b.appendChild(el('span', 'name', x[0])); b.appendChild(el('span', 'last', ago(S.last[x[1]])));
+      b.addEventListener('click', function () { logNow(x[0]); });
+      log.appendChild(b);
+    });
+    box.appendChild(log);
+
+    var todayStr = new Date().toDateString(), c = { Feed: 0, Nappy: 0, Sleep: 0 };
+    B.log.forEach(function (e) { if (new Date(e.ts).toDateString() === todayStr) c[e.type]++; });
+    var stats = el('div', 'stats');
+    [['Feed', 'Feeds'], ['Nappy', 'Nappies'], ['Sleep', 'Sleeps']].forEach(function (x) {
+      var st = el('div', 'stat'); st.appendChild(el('strong', null, String(c[x[0]]))); st.appendChild(el('span', null, x[1] + ' today')); stats.appendChild(st);
+    });
+    box.appendChild(stats);
+
+    if (!B.log.length) { box.appendChild(el('div', 'empty', 'Nothing logged in the last 14 days.')); return; }
+    var groups = {}, order = [];
+    B.log.forEach(function (e) { var k = new Date(e.ts).toDateString(); if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(e); });
+    var ul = el('ul', 'rows');
+    order.forEach(function (k) {
+      ul.appendChild(el('li', 'sechead', dayLabel(new Date(groups[k][0].ts))));
+      groups[k].forEach(function (e) {
+        var li = el('li'), b = el('button', 'row'); b.style.setProperty('--c', TYPE_COLOR[e.type]);
+        b.appendChild(el('div', 'time', fmtTime(e.ts)));
+        var m = el('div', 'main'); m.appendChild(el('div', 'title', e.type)); if (e.by) m.appendChild(el('div', 'sub', 'Logged by ' + e.by));
+        b.appendChild(m);
+        b.addEventListener('click', function () {
+          if (!e.row) { toast('Just saved. Try again in a moment.'); return; }
+          entryDraft = e; openSheet('entry-form');
+        });
+        li.appendChild(b); ul.appendChild(li);
+      });
+    });
+    box.appendChild(ul);
+  }
+  function buildEntryForm(body) {
+    var e = entryDraft;
+    $('sheet-title').textContent = e.type + ' at ' + fmtTime(e.ts);
+    $('sheet-sub').textContent = dayLabel(new Date(e.ts)) + (e.by ? ', logged by ' + e.by : '');
+    var btns = el('div', 'formbtns'), del = el('button', 'delbtn', 'Delete this entry'), armed = false;
+    del.addEventListener('click', function () {
+      if (!armed) { armed = true; del.textContent = 'Tap again to delete'; return; }
+      del.disabled = true;
+      google.script.run
+        .withSuccessHandler(function () { B.log = B.log.filter(function (x) { return x !== e; }); toast('Entry deleted'); closeSheet(); loadBaby(); load(); })
+        .withFailureHandler(function (err) { errToast(err); del.disabled = false; })
+        .deleteBabyLog(e.row, e.ts, e.type);
+    });
+    btns.appendChild(del); body.appendChild(btns);
+  }
+  function openLogForm() { openSheet('baby-log-form'); }
+  function buildLogForm(body) {
+    $('sheet-title').textContent = 'Log something earlier';
+    $('sheet-sub').textContent = 'Use this for a feed, nappy, or sleep you forgot to tap.';
+    var now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    var nowStr = now.toISOString().slice(0, 16);
+    body.appendChild(selectEl('What happened', 'l-type', [{ v: 'Feed', l: 'Feed' }, { v: 'Nappy', l: 'Nappy' }, { v: 'Sleep', l: 'Sleep' }], 'Feed'));
+    body.appendChild(fieldEl('When', 'l-when', 'datetime-local', nowStr, '', { max: nowStr }));
+    formButtons(body, {
+      editing: null, addFn: 'logBabyAt',
+      read: function () {
+        var v = $('l-when').value;
+        if (!v) { toast('Please pick a time'); return null; }
+        var ts = new Date(v).getTime();
+        if (ts > Date.now() + 300000) { toast('Pick a time that has already happened'); return null; }
+        return { type: $('l-type').value, ts: ts };
+      },
+      addArgs: function (d) { return [d.type, d.ts]; },
+      addedText: function (d) { return d.type + ' logged'; },
+      apply: function (d) { var k = d.type.toLowerCase(); if (d.ts > S.last[k]) S.last[k] = d.ts; },
+      after: function () { loadBaby(); }
+    });
+  }
+
+  // ----- Clinic tab -----
+  function babyClinic(box) {
+    var up = B.clinic.filter(function (v) { return !v.done && v.daysLeft >= 0; });
+    var past = B.clinic.filter(function (v) { return v.done || v.daysLeft < 0; }).reverse();
+    if (!B.clinic.length) { box.appendChild(el('div', 'empty', 'No visits yet. Tap Add visit for a check-up, vaccination, or appointment.')); return; }
+    var ul = el('ul', 'rows');
+    if (up.length) { ul.appendChild(el('li', 'sechead', 'Coming up')); up.forEach(function (v) { ul.appendChild(clinicRow(v)); }); }
+    if (past.length) { ul.appendChild(el('li', 'sechead', 'Past and done')); past.slice(0, 15).forEach(function (v) { ul.appendChild(clinicRow(v)); }); }
+    box.appendChild(ul);
+  }
+  function clinicRow(v) {
+    var li = el('li'), row = el('div', 'row' + (v.done ? ' done' : '') + (!v.done && v.daysLeft < 0 ? ' dim' : '')); row.style.setProperty('--c', 'var(--a-baby)');
+    var tick = el('button', 'tick tickbtn'); tick.innerHTML = TICK_SVG;
+    tick.setAttribute('aria-label', (v.done ? 'Mark not done: ' : 'Mark done: ') + v.what);
+    tick.addEventListener('click', function () {
+      v.done = !v.done; renderBabyPage();
+      google.script.run.withSuccessHandler(function () { loadBaby(); load(); })
+        .withFailureHandler(function (err) { errToast(err); loadBaby(); }).toggleClinicDone(v.row, v.what);
+    });
+    var main = el('button', 'smain'); main.setAttribute('aria-label', 'Edit ' + v.what);
+    main.appendChild(el('div', 'title', v.what));
+    main.appendChild(el('div', 'sub', fmtDate(v.date) + (v.notes ? ', ' + v.notes : '')));
+    main.addEventListener('click', function () { openClinicForm(v); });
+    row.appendChild(tick); row.appendChild(main);
+    if (!v.done && v.daysLeft >= 0) row.appendChild(el('span', 'tag' + (v.daysLeft <= 3 ? ' warn' : ''), v.daysLeft === 0 ? 'Today' : v.daysLeft === 1 ? 'Tomorrow' : 'In ' + v.daysLeft + ' days'));
+    else if (!v.done) row.appendChild(el('span', 'tag', 'Past'));
+    li.appendChild(row); return li;
+  }
+  function openClinicForm(v) { clinicDraft = v; openSheet('clinic-form'); }
+  function buildClinicForm(body) {
+    var v = clinicDraft;
+    $('sheet-title').textContent = v ? 'Edit visit' : 'Add a visit';
+    $('sheet-sub').textContent = 'Fill in the details, then tap Save.';
+    body.appendChild(fieldEl('What is it for', 'v-what', 'text', v ? v.what : '', '', { placeholder: 'e.g. 6-week check-up, vaccination', autocomplete: 'off' }));
+    body.appendChild(fieldEl('Date', 'v-date', 'date', v ? v.date : todayInput()));
+    body.appendChild(fieldEl('Notes (optional)', 'v-notes', 'text', v ? v.notes : '', '', { placeholder: 'e.g. bring the clinic card', autocomplete: 'off' }));
+    formButtons(body, {
+      editing: v, addFn: 'addClinic', updateFn: 'updateClinic', deleteFn: 'deleteClinic', deleteLabel: 'Delete visit',
+      read: function () {
+        var d = { what: $('v-what').value, date: $('v-date').value, notes: $('v-notes').value };
+        if (!d.what.trim()) { toast('Please enter what the visit is for'); return null; }
+        if (!d.date) { toast('Please pick a date'); return null; }
+        return d;
+      },
+      updateArgs: function (d) { return [v.row, v.what, d]; },
+      deleteArgs: function () { return [v.row, v.what]; },
+      addedText: function (d) { return d.what.trim() + ' added'; },
+      deletedText: 'Visit deleted',
+      after: function () { loadBaby(); }
+    });
+  }
+
+  // ----- Growth tab -----
+  function weightChart(items) {
+    var pts = items.filter(function (g) { return g.weight; }).map(function (g) { return { t: Date.parse(g.date), w: g.weight, d: g.date }; }).sort(function (a, b) { return a.t - b.t; });
+    if (pts.length < 2) return '';
+    var W = 320, H = 130, pl = 12, pr = 12, pt = 22, pb = 24;
+    var ws = pts.map(function (p) { return p.w; }), minW = Math.min.apply(null, ws), maxW = Math.max.apply(null, ws);
+    if (minW === maxW) { minW -= 0.5; maxW += 0.5; }
+    var pad = (maxW - minW) * 0.2; minW -= pad; maxW += pad;
+    var t0 = pts[0].t, span = (pts[pts.length - 1].t - t0) || 1;
+    function x(t) { return pl + (t - t0) / span * (W - pl - pr); }
+    function y(w) { return pt + (1 - (w - minW) / (maxW - minW)) * (H - pt - pb); }
+    var path = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.w).toFixed(1); }).join(' ');
+    var dots = pts.map(function (p) { return '<circle cx="' + x(p.t).toFixed(1) + '" cy="' + y(p.w).toFixed(1) + '" r="4" fill="var(--accent)"/>'; }).join('');
+    var first = pts[0], last = pts[pts.length - 1];
+    var lab = function (p, anchor) { return '<text x="' + x(p.t).toFixed(1) + '" y="' + (y(p.w) - 9).toFixed(1) + '" text-anchor="' + anchor + '" font-size="11" font-weight="600" fill="var(--ink)">' + p.w.toFixed(2).replace(/\.?0+$/, '') + ' kg</text>'; };
+    var dt = function (p, anchor) { return '<text x="' + x(p.t).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '" font-size="10" fill="var(--muted)">' + fmtDate(p.d) + '</text>'; };
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Weight over time"><path d="' + path + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + dots + lab(first, 'start') + lab(last, 'end') + dt(first, 'start') + dt(last, 'end') + '</svg>';
+  }
+  function babyGrowth(box) {
+    if (!B.growth.length) { box.appendChild(el('div', 'empty', 'No entries yet. Tap Add entry to record weight, length, or a note.')); return; }
+    var chart = weightChart(B.growth);
+    if (chart) { var holder = el('div'); holder.innerHTML = chart; box.appendChild(holder); }
+    var ul = el('ul', 'rows');
+    B.growth.slice().reverse().forEach(function (g) {
+      var parts = [];
+      if (g.weight) parts.push(g.weight + ' kg');
+      if (g.height) parts.push(g.height + ' cm long');
+      if (g.head) parts.push('head ' + g.head + ' cm');
+      var li = el('li'), b = el('button', 'row'); b.style.setProperty('--c', 'var(--a-baby)');
+      var m = el('div', 'main'); m.appendChild(el('div', 'title', fmtDate(g.date)));
+      m.appendChild(el('div', 'sub', (parts.join(', ') || 'Note') + (g.note ? '. ' + g.note : '')));
+      b.appendChild(m); b.addEventListener('click', function () { openGrowthForm(g); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  function openGrowthForm(g) { growthDraft = g; openSheet('growth-form'); }
+  function buildGrowthForm(body) {
+    var g = growthDraft;
+    $('sheet-title').textContent = g ? 'Edit entry' : 'Add an entry';
+    $('sheet-sub').textContent = 'Fill in what you measured. Leave the rest empty.';
+    var dec = { step: 'any', inputmode: 'decimal' };
+    body.appendChild(fieldEl('Date', 'g-date', 'date', g ? g.date : todayInput()));
+    body.appendChild(fieldEl('Weight (kg)', 'g-weight', 'number', g && g.weight ? g.weight : '', '', dec));
+    body.appendChild(fieldEl('Length or height (cm)', 'g-height', 'number', g && g.height ? g.height : '', '', dec));
+    body.appendChild(fieldEl('Head size (cm)', 'g-head', 'number', g && g.head ? g.head : '', '', dec));
+    body.appendChild(fieldEl('Note (optional)', 'g-note', 'text', g ? g.note : '', '', { placeholder: 'e.g. first smile, started solids', autocomplete: 'off' }));
+    formButtons(body, {
+      editing: g, addFn: 'addGrowth', updateFn: 'updateGrowth', deleteFn: 'deleteGrowth', deleteLabel: 'Delete entry',
+      read: function () {
+        var d = { date: $('g-date').value, weight: $('g-weight').value, height: $('g-height').value, head: $('g-head').value, note: $('g-note').value };
+        if (!d.date) { toast('Please pick a date'); return null; }
+        if (!d.weight && !d.height && !d.head && !d.note.trim()) { toast('Enter a measurement or a note'); return null; }
+        return d;
+      },
+      updateArgs: function (d) { return [g.row, g.date, d]; },
+      deleteArgs: function () { return [g.row, g.date]; },
+      addedText: function () { return 'Entry added'; },
+      deletedText: 'Entry deleted',
+      after: function () { loadBaby(); }
+    });
+  }
+
+  // ---------- Navigation (screens still to be built) ----------
+  var labels = { baby: 'Baby screen', calendar: 'Calendar screen', meals: 'Meal planner', chores: 'Chores screen', reminders: 'Home and renewals screen', smart: 'Smart home setup', more: 'More menu' };
+  function go(t) {
+    if (t === 'home') { window.scrollTo(0, 0); return; }
+    if (t === 'stock') { openStock(); return; }
+    if (t === 'shop') { openSheet('shop'); return; }
+    if (t === 'bills') { showBillsPage(); return; }
+    if (t === 'chores') { showChoresPage(); return; }
+    if (t === 'baby') { showBabyPage(); return; }
+    toast((labels[t] || 'This screen') + ' is built next');
+  }
+  document.querySelectorAll('[data-nav]').forEach(function (b) { b.addEventListener('click', function () { go(b.getAttribute('data-nav')); }); });
+
+  // ---------- Theme toggle ----------
+  $('theme').addEventListener('click', function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  // ---------- Start ----------
+  function renderAll() {
+    renderHeader();
+    if (!S) return;
+    renderSummary(); renderLast(); renderToday(); renderHighlights();
+  }
+  renderHeader();
+  load();
+  // Keep in step with what the other person logs
+  setInterval(function () { if (!mode && !pageOpen() && !document.hidden) load(); }, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !mode && !pageOpen()) load(); });
+})();
+</script>
+</body>
+</html>
