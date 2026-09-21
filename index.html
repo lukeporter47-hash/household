@@ -306,7 +306,7 @@
     <h2 id="h-hl">Across the house</h2>
     <ul class="rows" id="highlights"></ul>
   </section>
-<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 2</p></div>
+<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 3</p></div>
 
 <nav aria-label="Main">
   <div class="in">
@@ -725,6 +725,8 @@
       if (!S) return;
       var type = b.getAttribute('data-log');
       if (type === 'Feed') { openFeedForm(null); return; }
+      if (type === 'Nappy') { openSheet('nappy-form'); return; }
+      if (type === 'Sleep') { openSheet('sleep-form'); return; }
       S.last[type.toLowerCase()] = Date.now();
       renderLast(); renderHighlights();
       toast(type + ' logged');
@@ -957,6 +959,10 @@
       buildEventForm(body);
     } else if (mode === 'reminder-form') {
       buildReminderForm(body);
+    } else if (mode === 'nappy-form') {
+      buildNappyForm(body);
+    } else if (mode === 'sleep-form') {
+      buildSleepForm(body);
     } else if (mode === 'feed-form') {
       buildFeedForm(body);
     } else if (mode === 'baby-log-form') {
@@ -1384,6 +1390,8 @@
   function feedLine(e) {
     var parts = [];
     if (e.type === 'Feed') parts.push(e.feedType ? e.feedType + ', ' + e.amount + ' ' + e.unit + (e.note ? ': ' + e.note : '') : 'Details missing');
+    if (e.type === 'Nappy') { var nl = [e.feedType, e.note].filter(Boolean).join(': '); if (nl) parts.push(nl); }
+    if (e.type === 'Sleep') { var sl = [durationText(e.amount), e.feedType].filter(Boolean).join(', '); if (e.note) sl += (sl ? ': ' : '') + e.note; if (sl) parts.push(sl); }
     if (e.by) parts.push('by ' + e.by);
     return parts.join(', ');
   }
@@ -1435,6 +1443,8 @@
   // ----- Today tab -----
   function logNow(type) {
     if (type === 'Feed') { openFeedForm(null); return; }
+    if (type === 'Nappy') { openSheet('nappy-form'); return; }
+    if (type === 'Sleep') { openSheet('sleep-form'); return; }
     var k = type.toLowerCase(), ts = Date.now();
     S.last[k] = ts;
     if (B) B.log.unshift({ row: 0, ts: ts, type: type, by: S.me });
@@ -1457,7 +1467,12 @@
     B.log.forEach(function (e) { if (new Date(e.ts).toDateString() === todayStr) c[e.type]++; });
     var stats = el('div', 'stats');
     [['Feed', 'Feeds'], ['Nappy', 'Nappies'], ['Sleep', 'Sleeps']].forEach(function (x) {
-      var st = el('div', 'stat'); st.appendChild(el('strong', null, String(c[x[0]]))); st.appendChild(el('span', null, x[1] + ' today')); stats.appendChild(st);
+      var st = el('div', 'stat'); st.appendChild(el('strong', null, String(c[x[0]]))); st.appendChild(el('span', null, x[1] + ' today'));
+      if (x[0] === 'Sleep') {
+        var mins = 0; B.log.forEach(function (e) { if (e.type === 'Sleep' && new Date(e.ts).toDateString() === todayStr) mins += Number(e.amount) || 0; });
+        if (mins) { var tot = el('span', null, durationText(mins) + ' in total'); tot.style.display = 'block'; st.appendChild(tot); }
+      }
+      stats.appendChild(st);
     });
     box.appendChild(stats);
 
@@ -1504,6 +1519,7 @@
     var now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     var nowStr = now.toISOString().slice(0, 16);
     body.appendChild(selectEl('What happened', 'l-type', [{ v: 'Feed', l: 'Feed' }, { v: 'Nappy', l: 'Nappy' }, { v: 'Sleep', l: 'Sleep' }], 'Feed'));
+
     var feed = el('div'); feed.id = 'l-feed';
     var opts = [{ v: '', l: 'Choose\u2026' }].concat(FEED_TYPES.map(function (t) { return { v: t.k, l: t.k + ' (' + t.label + ')' }; }));
     feed.appendChild(selectEl('What was fed', 'l-ft', opts, ''));
@@ -1512,8 +1528,21 @@
     feed.appendChild(foodBox);
     feed.appendChild(fieldEl('How much', 'l-amt', 'number', '', 'ml for drinks, spoons for solids.', { step: 'any', inputmode: 'decimal', min: '1' }));
     body.appendChild(feed);
+
+    var nap = el('div'); nap.id = 'l-nappy'; nap.style.display = 'none';
+    nap.appendChild(selectEl('What was in it', 'l-nk', [{ v: '', l: 'Choose\u2026' }].concat(NAPPY_KINDS.map(function (k) { return { v: k, l: k }; })), ''));
+    nap.appendChild(fieldEl('Note (optional)', 'l-nnote', 'text', '', '', { placeholder: 'e.g. runny, rash', autocomplete: 'off', maxlength: '200' }));
+    body.appendChild(nap);
+
+    var slp = el('div'); slp.id = 'l-sleep'; slp.style.display = 'none';
+    slp.appendChild(fieldEl('How long (minutes)', 'l-smin', 'text', '', 'For example 90 for an hour and a half.', { inputmode: 'numeric', autocomplete: 'off' }));
+    slp.appendChild(selectEl('How did he sleep (optional)', 'l-sq', [{ v: '', l: 'Not sure' }].concat(SLEEP_QUALITY.map(function (k) { return { v: k, l: k }; })), ''));
+    slp.appendChild(fieldEl('Note (optional)', 'l-snote', 'text', '', '', { autocomplete: 'off', maxlength: '200' }));
+    body.appendChild(slp);
+
     body.appendChild(fieldEl('When', 'l-when', 'datetime-local', nowStr, '', { max: nowStr }));
-    $('l-type').addEventListener('change', function () { feed.style.display = this.value === 'Feed' ? '' : 'none'; });
+    function showType() { var t = $('l-type').value; feed.style.display = t === 'Feed' ? '' : 'none'; nap.style.display = t === 'Nappy' ? '' : 'none'; slp.style.display = t === 'Sleep' ? '' : 'none'; }
+    $('l-type').addEventListener('change', showType);
     $('l-ft').addEventListener('change', function () { foodBox.style.display = this.value === 'Solids' ? '' : 'none'; });
     formButtons(body, {
       editing: null, addFn: 'logBabyAt',
@@ -1529,6 +1558,13 @@
           if (ft === 'Solids' && !food) { toast('Please type what he ate'); return null; }
           if (!(amt > 0)) { toast('Please enter how much'); return null; }
           d.feedType = ft; d.amount = amt; d.food = ft === 'Solids' ? food : '';
+        } else if (d.type === 'Nappy') {
+          if (!$('l-nk').value) { toast('Please choose pee, poop or both'); return null; }
+          d.feedType = $('l-nk').value; d.amount = 0; d.food = $('l-nnote').value.trim();
+        } else {
+          var mins = parseInt($('l-smin').value, 10);
+          if (!(mins >= 1 && mins <= 1440)) { toast('Please enter how long he slept'); return null; }
+          d.feedType = $('l-sq').value; d.amount = mins; d.food = $('l-snote').value.trim();
         }
         return d;
       },
@@ -1652,6 +1688,90 @@
       deletedText: 'Entry deleted',
       after: function () { loadBaby(); }
     });
+  }
+
+  // ---------- Nappy and sleep details ----------
+  var NAPPY_KINDS = ['Pee', 'Poop', 'Both'], NAPPY_NOTES = ['Normal', 'Runny', 'Diarrhea', 'Hard', 'Rash'];
+  var SLEEP_QUALITY = ['Well', 'Restless', 'Woke often', 'Hard to settle'];
+  var SLEEP_QUICK = [{ l: '15 min', m: 15 }, { l: '30 min', m: 30 }, { l: '45 min', m: 45 }, { l: '1 h', m: 60 }, { l: '1 h 30', m: 90 }, { l: '2 h', m: 120 }, { l: '3 h', m: 180 }];
+  function durationText(min) {
+    min = Math.round(Number(min) || 0); if (!min) return '';
+    var h = Math.floor(min / 60), m = min % 60;
+    return (h ? h + ' h' : '') + (h && m ? ' ' : '') + (m ? m + ' min' : '');
+  }
+  function afterBabyLog(type, ts, detail, amount, unit, note, toastText) {
+    S.last[type.toLowerCase()] = Math.max(S.last[type.toLowerCase()] || 0, ts);
+    if (B) B.log.unshift({ row: 0, ts: ts, type: type, by: S.me, note: note, feedType: detail, amount: amount, unit: unit });
+    toast(toastText); closeSheet(); load(); if (babyOpen) loadBaby();
+  }
+  function buildNappyForm(body) {
+    var kind = '';
+    $('sheet-title').textContent = 'Nappy change';
+    $('sheet-sub').textContent = 'What was in it?';
+    var grid = el('div', 'optgrid'); grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    NAPPY_KINDS.forEach(function (k) {
+      var b = el('button', 'opt', k);
+      b.addEventListener('click', function () { kind = k; Array.prototype.forEach.call(grid.children, function (x) { x.classList.toggle('on', x === b); }); save.disabled = false; });
+      grid.appendChild(b);
+    });
+    body.appendChild(grid);
+    body.appendChild(fieldEl('Note (optional)', 'n-note', 'text', '', 'Tap a word, or type your own.', { placeholder: 'e.g. runny, rash', autocomplete: 'off', maxlength: '200' }));
+    var chips = el('div', 'chips'); chips.style.flexWrap = 'wrap'; chips.style.marginBottom = '14px';
+    NAPPY_NOTES.forEach(function (w) { var c = el('button', 'chip', w); c.addEventListener('click', function () { $('n-note').value = w; }); chips.appendChild(c); });
+    body.appendChild(chips);
+    var save = el('button', 'savebtn', 'Save nappy'); save.disabled = true;
+    save.addEventListener('click', function () {
+      if (!kind) return;
+      var ts = Date.now(), note = $('n-note').value.trim();
+      save.disabled = true; save.textContent = 'Saving\u2026';
+      google.script.run
+        .withSuccessHandler(function () { afterBabyLog('Nappy', ts, kind, null, '', note, 'Nappy logged: ' + kind); })
+        .withFailureHandler(function (err) { errToast(err); save.disabled = false; save.textContent = 'Save nappy'; })
+        .logBabyAt('Nappy', ts, kind, 0, note);
+    });
+    body.appendChild(save);
+  }
+  function buildSleepForm(body) {
+    var minutes = 0, quality = '';
+    $('sheet-title').textContent = 'Sleep';
+    $('sheet-sub').textContent = 'How long did he sleep?';
+    var chips = el('div', 'chips'); chips.style.flexWrap = 'wrap'; chips.style.marginBottom = '12px';
+    function validate() { save.disabled = !(minutes >= 1 && minutes <= 1440); }
+    function renderQuick() {
+      chips.innerHTML = '';
+      SLEEP_QUICK.forEach(function (q) {
+        var c = el('button', 'chip' + (minutes === q.m ? ' on' : ''), q.l);
+        c.addEventListener('click', function () { minutes = q.m; $('s-min').value = String(q.m); renderQuick(); validate(); });
+        chips.appendChild(c);
+      });
+    }
+    body.appendChild(chips);
+    body.appendChild(fieldEl('Or type the minutes', 's-min', 'text', '', 'For example 75 for an hour and a quarter.', { inputmode: 'numeric', autocomplete: 'off', placeholder: '0' }));
+    $('s-min').addEventListener('input', function (e) { minutes = parseInt(e.target.value, 10) || 0; renderQuick(); validate(); });
+    var qf = el('div', 'field'), qc = el('div', 'chips'); qc.style.flexWrap = 'wrap';
+    qf.appendChild(el('label', null, 'How did he sleep? (optional)'));
+    function renderQuality() {
+      qc.innerHTML = '';
+      SLEEP_QUALITY.forEach(function (w) {
+        var c = el('button', 'chip' + (quality === w ? ' on' : ''), w);
+        c.addEventListener('click', function () { quality = quality === w ? '' : w; renderQuality(); });
+        qc.appendChild(c);
+      });
+    }
+    qf.appendChild(qc); body.appendChild(qf);
+    body.appendChild(fieldEl('Note (optional)', 's-note', 'text', '', '', { autocomplete: 'off', maxlength: '200' }));
+    var save = el('button', 'savebtn', 'Save sleep'); save.disabled = true;
+    save.addEventListener('click', function () {
+      if (!(minutes >= 1 && minutes <= 1440)) return;
+      var ts = Date.now(), note = $('s-note').value.trim();
+      save.disabled = true; save.textContent = 'Saving\u2026';
+      google.script.run
+        .withSuccessHandler(function () { afterBabyLog('Sleep', ts, quality, minutes, 'min', note, 'Sleep logged: ' + durationText(minutes)); })
+        .withFailureHandler(function (err) { errToast(err); save.disabled = false; save.textContent = 'Save sleep'; })
+        .logBabyAt('Sleep', ts, quality, minutes, note);
+    });
+    body.appendChild(save);
+    renderQuick(); renderQuality();
   }
 
   // ---------- Feed details (required) ----------
