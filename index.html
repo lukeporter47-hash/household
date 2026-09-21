@@ -266,6 +266,31 @@
   .kv dt { color: var(--muted); }
   .kv dd { margin: 0; overflow-wrap: anywhere; }
 
+  .hlhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .hlhead h2 { margin: 0; }
+  .widgets { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: dense; gap: 10px; }
+  .w { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; min-height: 132px; display: flex; flex-direction: column; gap: 5px; box-shadow: var(--shadow); min-width: 0; }
+  .w.wide { grid-column: 1 / -1; min-height: 0; }
+  .w:active { transform: scale(.98); }
+  .w .wt { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .w .wi { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--chip-bg); color: var(--c, var(--muted)); flex: none; }
+  .w .wi svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .w .wh { font-family: var(--font-display); font-weight: 700; font-size: 21px; line-height: 1.12; overflow-wrap: anywhere; }
+  .w .wd { color: var(--muted); font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+  .w .wl { display: grid; gap: 3px; margin-top: 2px; }
+  .w .wl div { font-size: 14px; }
+  .w .wl b { font-family: var(--font-display); font-weight: 700; margin-right: 8px; }
+  .w .bar { margin-top: auto; }
+  .w.warn { border-color: var(--warn); }
+  .w.warn .wh { color: var(--warn); }
+  .w.soon { border-color: var(--sun); }
+  .w.ok .wi { background: var(--ok-bg); color: var(--accent); }
+  .wrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 8px; }
+  .wrow .wname { flex: 1; font-weight: 600; }
+  .wrow .chip { min-width: 74px; text-align: center; }
+  .wrow .stepbtn { width: 36px; height: 36px; font-size: 14px; }
+  .wrow .stepbtn[disabled] { opacity: .35; }
+
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px));
     background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 15px; font-weight: 500;
@@ -303,10 +328,10 @@
   </section>
 
   <section aria-labelledby="h-hl">
-    <h2 id="h-hl">Across the house</h2>
-    <ul class="rows" id="highlights"></ul>
+    <div class="hlhead"><h2 id="h-hl">Across the house</h2><button class="pbtn" id="widgets-edit">Edit</button></div>
+    <div class="widgets" id="highlights"></div>
   </section>
-<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 3</p></div>
+<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 3.2</p></div>
 
 <nav aria-label="Main">
   <div class="in">
@@ -511,7 +536,17 @@
   var API_URL = 'https://script.google.com/macros/s/AKfycbxffkJcuYRJSQJs9JsxPZ7Tx9AJ8DQAI0mjchjHf8aoJvCQ7wGGFg7DTGy6pS4smR-v/exec';
   var creds = null, waiters = [];
   try { creds = JSON.parse(localStorage.getItem('householdCreds') || 'null'); } catch (e) { creds = null; }
-  function saveCreds(c) { creds = c; try { if (c) localStorage.setItem('householdCreds', JSON.stringify(c)); else localStorage.removeItem('householdCreds'); } catch (e) {} }
+  // The last answers are remembered on this phone, so screens open instantly and refresh quietly behind the scenes.
+  var SWR = { getHomeData: 1, getDocsSummary: 1, getMoneySummary: 1, getPackingSummary: 1, getPetsSummary: 1, getBabyData: 1, getCalendarData: 1,
+    getRemindersData: 1, getMoneyData: 1, getTripsData: 1, getPetsData: 1, getContactsData: 1, getDocumentsData: 1, getMealsData: 1 };
+  var memo = {};
+  try { memo = JSON.parse(localStorage.getItem('householdMemo') || '{}'); } catch (e) { memo = {}; }
+  function saveMemo() { try { localStorage.setItem('householdMemo', JSON.stringify(memo)); } catch (e) {} }
+  function memoKey(fn, args) { return creds ? creds.who + '|' + fn + '|' + JSON.stringify(args || []) : ''; }
+  function saveCreds(c) {
+    creds = c;
+    try { if (c) localStorage.setItem('householdCreds', JSON.stringify(c)); else { localStorage.removeItem('householdCreds'); localStorage.removeItem('householdMemo'); memo = {}; } } catch (e) {}
+  }
 
   function post(fn, args, c) {
     return fetch(API_URL, {
@@ -526,7 +561,10 @@
   function call(fn, args) {
     var ready = creds ? Promise.resolve() : needLogin();
     return ready.then(function () { return post(fn, args, creds); }).then(function (res) {
-      if (res && res.ok) return res.result;
+      if (res && res.ok) {
+        if (!SWR[fn]) { memo = {}; saveMemo(); } // something was changed, so old remembered answers are dropped
+        return res.result;
+      }
       if (res && res.auth) { saveCreds(null); return needLogin(res.error).then(function () { return call(fn, args); }); }
       throw new Error((res && res.error) || 'Something went wrong. Please try again.');
     });
@@ -555,7 +593,13 @@
       if (k === 'withFailureHandler') return function (f) { return makeRun(ok, f); };
       return function () {
         var args = Array.prototype.slice.call(arguments);
-        call(k, args).then(function (r) { if (ok) ok(r); }, function (e) { if (bad) bad(e); });
+        var mk = SWR[k] ? memoKey(k, args) : '', shown = mk && memo[mk] !== undefined ? memo[mk] : undefined;
+        if (shown !== undefined && ok) setTimeout(function () { ok(JSON.parse(JSON.stringify(shown))); }, 0);
+        call(k, args).then(function (r) {
+          if (mk) { memo[mk] = r; saveMemo(); }
+          if (shown !== undefined && JSON.stringify(r) === JSON.stringify(shown)) return; // nothing changed
+          if (ok) ok(r);
+        }, function (e) { if (shown !== undefined) return; if (bad) bad(e); });
       };
     } });
   }
@@ -763,103 +807,176 @@
     });
   }
 
-  // ---------- Highlights from every area ----------
-  function renderHighlights() {
-    var low = lowItems(), open = openChores(), ne = nextEvent();
-    var unpaid = S.bills.filter(function (b) { return !b.paid; }).sort(function (a, b) { return a.daysLeft - b.daysLeft; });
-    var rem = S.reminders;
-    var rows = [];
-
-    rows.push({ area: 'Baby', c: '--a-baby',
-      title: 'Last feed ' + agoText(S.last.feed),
-      sub: S.nextClinic ? 'Next clinic: ' + S.nextClinic.what + ' ' + inDays(S.nextClinic.daysLeft) : 'Nappy ' + agoText(S.last.nappy) + ', sleep ' + agoText(S.last.sleep),
-      chip: S.nextClinic && S.nextClinic.daysLeft <= 3 ? 'Clinic soon' : '', type: 'warn', act: 'baby' });
-
-    if (!S.calendarFound) {
-      rows.push({ area: 'Calendar', c: '--a-cal', title: 'Family calendar not linked yet', sub: 'We set this up in a later step', chip: 'Set up', type: '', act: 'calendar' });
-    } else {
-      rows.push({ area: 'Calendar', c: '--a-cal',
-        title: ne ? 'Next: ' + ne.title + (ne.time === 'All day' ? ' (all day)' : ', ' + ne.time) : (S.events.length ? 'Nothing more today' : 'Nothing on today'),
-        sub: plural(S.events.length, 'event', 'events') + ' today',
-        chip: S.events.length + ' today', type: '', act: 'calendar' });
-    }
-
-    rows.push({ area: 'Meals', c: '--a-meal',
-      title: S.meals.tonight ? 'Tonight: ' + S.meals.tonight : 'No dinner planned tonight',
-      sub: S.meals.tomorrow ? 'Tomorrow: ' + S.meals.tomorrow : 'Add meals in the Meals tab of the Sheet',
-      chip: S.meals.tonight ? 'Planned' : 'Plan', type: S.meals.tonight ? 'ok' : '', act: 'meals' });
-
-    rows.push({ area: 'Stock and shopping', c: '--a-stock',
-      title: low.length ? plural(low.length, 'item', 'items') + ' running low' : 'Everything is stocked',
-      sub: low.length ? low.slice(0, 3).map(function (i) { return i.item; }).join(', ') + (low.length > 3 ? '…' : '') : 'Nothing on the shopping list',
-      chip: low.length ? 'Shopping list' : 'All good', type: low.length ? 'warn' : 'ok', act: low.length ? 'shop' : 'stock' });
-
-    rows.push({ area: 'Chores', c: '--a-chore',
-      title: open.length ? plural(open.length, 'chore', 'chores') + ' open today' : (S.chores.some(function (c) { return c.status === 'done'; }) ? 'All chores done today' : (S.chores.length ? 'Nothing due today' : 'No chores set up')),
-      sub: S.weekDone + ' of ' + S.weekTotal + ' done this week',
-      chip: open.length ? 'Open' : 'Done', type: open.length ? '' : 'ok', act: 'chores' });
-
-    if (unpaid.length) {
-      rows.push({ area: 'Bills', c: '--a-bill',
-        title: unpaid[0].name + ' ' + dueText(unpaid[0].daysLeft),
-        sub: unpaid.length > 1 ? (unpaid.length - 1) + ' more to pay this month' : 'Everything else is paid',
-        chip: unpaid[0].daysLeft < 0 ? 'Overdue' : unpaid[0].daysLeft <= 3 ? 'Due soon' : 'To pay', type: unpaid[0].daysLeft <= 3 ? 'warn' : '', act: 'bills' });
-    } else {
-      rows.push({ area: 'Bills', c: '--a-bill', title: 'All bills paid this month', sub: 'Nothing due', chip: 'Paid', type: 'ok', act: 'bills' });
-    }
-
-    if (rem.length) {
-      var r0 = rem[0], r1 = rem[1];
-      rows.push({ area: 'Home and renewals', c: '--a-admin',
-        title: r0.name + (r0.daysLeft < 0 ? ' is overdue' : ' ' + inDays(r0.daysLeft)),
-        sub: r1 ? r1.name + ' ' + inDays(r1.daysLeft) : 'Nothing else coming up',
-        chip: r0.daysLeft <= 7 ? 'Soon' : 'Reminder', type: r0.daysLeft <= 7 ? 'warn' : '', act: 'reminders' });
-    } else {
-      rows.push({ area: 'Home and renewals', c: '--a-admin', title: 'No reminders coming up', sub: 'Add them in the Reminders tab of the Sheet', chip: 'All good', type: 'ok', act: 'reminders' });
-    }
-
-    var mn = S.money || { currency: 'R', spent: 0, budget: 0, over: [], near: [] };
-    var mpct = mn.budget > 0 ? Math.round(mn.spent / mn.budget * 100) : 0;
-    rows.push({ area: 'Money', c: '--a-bill',
-      title: money(mn.spent, mn.currency) + ' spent this month',
-      sub: mn.budget > 0 ? (mn.over.length ? 'Over budget: ' + mn.over.join(', ') : mpct + '% of ' + money(mn.budget, mn.currency) + ' budget') : 'Tap to set a monthly budget',
-      chip: mn.budget > 0 ? (mn.over.length || mpct > 100 ? 'Over budget' : mn.near.length || mpct >= 90 ? 'Near limit' : 'On track') : '',
-      type: mn.budget > 0 ? (mn.over.length || mn.near.length || mpct >= 90 ? 'warn' : 'ok') : '', act: 'money' });
-
-    var dc = S.docs || { total: 0, soon: [] }, d0 = dc.soon[0];
-    rows.push({ area: 'Documents', c: '--a-admin',
-      title: d0 ? d0.title + (d0.daysLeft < 0 ? ' has expired' : d0.daysLeft === 0 ? ' expires today' : ' expires ' + inDays(d0.daysLeft)) : (dc.total ? plural(dc.total, 'document', 'documents') + ' stored' : 'No documents yet'),
-      sub: d0 ? (dc.soon.length > 1 ? (dc.soon.length - 1) + ' more expiring soon' : 'Everything else is up to date') : 'Warranties, policies, IDs',
-      chip: d0 ? (d0.daysLeft < 0 ? 'Expired' : 'Expiring') : '', type: d0 ? 'warn' : '', act: 'documents' });
-
-    var pl = ((S.pets && S.pets.pets) || []).slice().sort(function (a, b) { return (a.next ? a.next.daysLeft : 99999) - (b.next ? b.next.daysLeft : 99999); });
-    var p0 = pl[0];
-    rows.push({ area: 'Pets', c: '--a-baby',
-      title: p0 ? p0.name + (p0.next ? ': ' + p0.next.name.replace(p0.name + ' ', '') + ' ' + (p0.next.daysLeft < 0 ? 'is overdue' : inDays(p0.next.daysLeft)) : ' is up to date') : 'Pet profiles',
-      sub: p0 ? 'Profile, care schedule and weight' : 'Add your dog\u2019s profile',
-      chip: p0 && p0.next && p0.next.daysLeft <= 7 ? (p0.next.daysLeft < 0 ? 'Overdue' : 'Soon') : '', type: 'warn', act: 'pets' });
-
-    var pk = S.packing || { active: 0, top: null };
-    rows.push({ area: 'Packing', c: '--a-meal',
-      title: pk.top ? pk.top.name + ': ' + pk.top.packed + ' of ' + pk.top.total + ' packed' : 'Packing lists for trips',
-      sub: pk.top ? plural(pk.active, 'active trip', 'active trips') : 'AI plans the list from the days and who is going',
-      chip: pk.top && pk.top.total > pk.top.packed ? (pk.top.total - pk.top.packed) + ' to pack' : '', type: '', act: 'trips' });
-
-    rows.push({ area: 'Contacts', c: '--a-cal', title: 'Family contacts', sub: 'Plumber, doctor, school and more', chip: '', type: '', act: 'contacts' });
-
-    rows.push({ area: 'Smart home', c: '--a-smart',
-      title: 'Google Assistant not linked yet', sub: 'Once linked: add to the shopping list by voice',
-      chip: 'Set up', type: '', act: 'smart' });
-
-    var ul = $('highlights'); ul.innerHTML = '';
-    rows.forEach(function (r) {
-      var li = el('li'); var b = el('button', 'row hl'); b.style.setProperty('--c', 'var(' + r.c + ')');
-      var m = el('div', 'main');
-      m.appendChild(el('div', 'area', r.area)); m.appendChild(el('div', 'title', r.title)); m.appendChild(el('div', 'sub', r.sub));
-      b.appendChild(m); if (r.chip) b.appendChild(el('span', 'tag ' + r.type, r.chip));
-      b.addEventListener('click', function () { go(r.act); });
-      li.appendChild(b); ul.appendChild(li);
+  // ---------- Widgets: one tile for every part of the house ----------
+  var ICONS = {
+    baby: '<circle cx="12" cy="12" r="8"/><path d="M8.5 14c1.2 1.6 5.8 1.6 7 0"/><path d="M9 10h.01M15 10h.01"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+    meals: '<path d="M6 3v7a2 2 0 0 0 2 2v9M10 3v7M6 7h4"/><path d="M16 3c-2 2-2 6 0 8v10"/>',
+    stock: '<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/>',
+    chores: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+    bills: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+    reminders: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+    documents: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+    money: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5v9M9.5 10c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.4-2.5 1.6-2.5.6-2.5 1.6 1 1.6 2.5 1.6 2.5-.6 2.5-1.6"/>',
+    packing: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 13h16"/>',
+    pets: '<circle cx="7" cy="10" r="1.6"/><circle cx="12" cy="7.5" r="1.6"/><circle cx="17" cy="10" r="1.6"/><path d="M8 17c0-2.5 2-4 4-4s4 1.5 4 4c0 1.5-1.5 2-4 2s-4-.5-4-2z"/>',
+    contacts: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    smart: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><circle cx="12" cy="15" r="2"/>'
+  };
+  // The default order. wide = full width. off = hidden until you turn it on in Edit.
+  var WIDGET_DEFS = [
+    { id: 'baby', label: 'Baby', wide: true, color: '--a-baby', act: 'baby' },
+    { id: 'calendar', label: 'Calendar', wide: true, color: '--a-cal', act: 'calendar' },
+    { id: 'meals', label: 'Meals', color: '--a-meal', act: 'meals' },
+    { id: 'stock', label: 'Stock and shopping', color: '--a-stock', act: 'stock' },
+    { id: 'chores', label: 'Chores', color: '--a-chore', act: 'chores' },
+    { id: 'bills', label: 'Bills', color: '--a-bill', act: 'bills' },
+    { id: 'reminders', label: 'Reminders', color: '--a-admin', act: 'reminders' },
+    { id: 'documents', label: 'Documents', color: '--a-admin', act: 'documents' },
+    { id: 'money', label: 'Money', wide: true, color: '--a-bill', act: 'money' },
+    { id: 'packing', label: 'Packing', color: '--a-meal', act: 'trips' },
+    { id: 'pets', label: 'Pets', color: '--a-baby', act: 'pets' },
+    { id: 'contacts', label: 'Contacts', color: '--a-cal', act: 'contacts' },
+    { id: 'smart', label: 'Smart home', color: '--a-smart', act: 'smart', off: true }
+  ];
+  function widgetPrefs() { try { return JSON.parse(localStorage.getItem('householdWidgets') || 'null') || {}; } catch (e) { return {}; } }
+  function saveWidgetPrefs(p) { try { localStorage.setItem('householdWidgets', JSON.stringify(p)); } catch (e) {} }
+  // The saved order and choices, merged with the defaults (new widgets added later appear at the end)
+  function orderedWidgets() {
+    var p = widgetPrefs(), byId = {}, ids = [];
+    WIDGET_DEFS.forEach(function (d) { byId[d.id] = d; ids.push(d.id); });
+    var seq = (p.order || []).filter(function (id) { return byId[id]; });
+    ids.forEach(function (id) { if (seq.indexOf(id) < 0) seq.push(id); });
+    var hidden = Array.isArray(p.hidden) ? p.hidden : WIDGET_DEFS.filter(function (d) { return d.off; }).map(function (d) { return d.id; });
+    return seq.map(function (id) { return { def: byId[id], shown: hidden.indexOf(id) < 0 }; });
+  }
+  function upcomingEvents() {
+    var d = new Date(), mins = d.getHours() * 60 + d.getMinutes();
+    return S.events.filter(function (e) {
+      if (e.time === 'All day') return true;
+      var p = e.time.split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10) >= mins;
     });
+  }
+  function shorten(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n - 1) + '\u2026' : t; }
+
+  // What each tile says: a big headline, a line of detail, and whether it needs attention
+  function widgetData(id) {
+    var low = lowItems(), open = openChores();
+    if (id === 'baby') {
+      var d = { head: S.last.feed ? 'Fed ' + ago(S.last.feed) : 'No feeds yet',
+        detail: 'Nappy ' + agoText(S.last.nappy) + ', sleep ' + agoText(S.last.sleep), state: '' };
+      if (S.nextClinic) { d.detail += '. Next clinic: ' + shorten(S.nextClinic.what, 24) + ' ' + inDays(S.nextClinic.daysLeft); if (S.nextClinic.daysLeft <= 3) d.state = 'soon'; }
+      return d;
+    }
+    if (id === 'calendar') {
+      if (!S.calendarFound) return { head: 'Not linked yet', detail: 'Set up the Family calendar', state: '' };
+      var up = upcomingEvents();
+      return { head: S.events.length ? plural(S.events.length, 'event', 'events') + ' today' : 'Nothing on today', detail: '', state: '',
+        lines: up.slice(0, 3).map(function (e) { return [e.time === 'All day' ? 'All day' : e.time, shorten(e.title, 28)]; }) };
+    }
+    if (id === 'meals') return { head: S.meals.tonight ? shorten(S.meals.tonight, 22) : 'Plan dinner', detail: S.meals.tomorrow ? 'Tomorrow: ' + shorten(S.meals.tomorrow, 22) : 'Nothing planned tomorrow', state: '' };
+    if (id === 'stock') return { head: low.length ? low.length + ' low' : 'All stocked',
+      detail: low.length ? low.slice(0, 2).map(function (i) { return i.item; }).join(', ') + (low.length > 2 ? '\u2026' : '') : 'Nothing to buy', state: low.length ? 'warn' : 'ok', act: low.length ? 'shop' : 'stock' };
+    if (id === 'chores') return { head: open.length ? open.length + ' open' : (S.chores.length ? 'All done' : 'None set up'),
+      detail: S.weekDone + ' of ' + S.weekTotal + ' done this week', state: open.length ? '' : 'ok' };
+    if (id === 'bills') {
+      var unpaid = S.bills.filter(function (b) { return !b.paid; }).sort(function (a, b) { return a.daysLeft - b.daysLeft; });
+      if (!unpaid.length) return { head: 'All paid', detail: S.bills.length ? 'Nothing due this month' : 'No bills yet', state: 'ok' };
+      return { head: shorten(unpaid[0].name, 18), detail: dueText(unpaid[0].daysLeft) + (unpaid.length > 1 ? ', ' + (unpaid.length - 1) + ' more' : ''),
+        state: unpaid[0].daysLeft < 0 ? 'warn' : unpaid[0].daysLeft <= 3 ? 'soon' : '' };
+    }
+    if (id === 'reminders') {
+      var r0 = S.reminders[0];
+      if (!r0) return { head: 'All clear', detail: 'Nothing coming up', state: 'ok' };
+      return { head: shorten(r0.name, 20), detail: r0.daysLeft < 0 ? 'Overdue by ' + plural(-r0.daysLeft, 'day', 'days') : inDays(r0.daysLeft).replace(/^./, function (c) { return c.toUpperCase(); }),
+        state: r0.daysLeft < 0 ? 'warn' : r0.daysLeft <= 7 ? 'soon' : '' };
+    }
+    if (id === 'documents') {
+      var dc = S.docs || { total: 0, soon: [] }, x0 = dc.soon[0];
+      if (!x0) return { head: dc.total ? plural(dc.total, 'document', 'documents') : 'None yet', detail: dc.total ? 'All up to date' : 'Warranties, policies, IDs', state: dc.total ? 'ok' : '' };
+      return { head: shorten(x0.title, 20), detail: x0.daysLeft < 0 ? 'Expired' : 'Expires ' + inDays(x0.daysLeft), state: x0.daysLeft < 0 ? 'warn' : 'soon' };
+    }
+    if (id === 'money') {
+      var mn = S.money || { currency: 'R', spent: 0, budget: 0, over: [], near: [] }, pct = mn.budget > 0 ? Math.round(mn.spent / mn.budget * 100) : 0;
+      var st = mn.budget > 0 ? (mn.over.length || pct > 100 ? 'warn' : (mn.near.length || pct >= 90 ? 'soon' : 'ok')) : '';
+      return { head: money(mn.spent, mn.currency) + ' spent', state: st,
+        detail: mn.budget > 0 ? (mn.over.length ? 'Over budget: ' + mn.over.join(', ') : pct + '% of ' + money(mn.budget, mn.currency) + ' this month') : 'Tap to set a monthly budget',
+        bar: mn.budget > 0 ? { pct: Math.min(100, pct), cls: st === 'warn' ? ' low' : st === 'soon' ? ' near' : '' } : null };
+    }
+    if (id === 'packing') {
+      var pk = S.packing || { active: 0, top: null };
+      if (!pk.top) return { head: 'No trips', detail: 'AI packing lists', state: '' };
+      return { head: shorten(pk.top.name, 18), detail: pk.top.packed + ' of ' + pk.top.total + ' packed', state: pk.top.total && pk.top.packed === pk.top.total ? 'ok' : '',
+        bar: pk.top.total ? { pct: Math.round(pk.top.packed / pk.top.total * 100), cls: '' } : null };
+    }
+    if (id === 'pets') {
+      var pl = ((S.pets && S.pets.pets) || []).slice().sort(function (a, b) { return (a.next ? a.next.daysLeft : 99999) - (b.next ? b.next.daysLeft : 99999); }), p0 = pl[0];
+      if (!p0) return { head: 'Pet profiles', detail: 'Add your dog\u2019s profile', state: '' };
+      if (!p0.next) return { head: p0.name, detail: 'All up to date', state: 'ok' };
+      return { head: p0.name, detail: shorten(p0.next.name.replace(p0.name + ' ', ''), 20) + ' ' + (p0.next.daysLeft < 0 ? 'is overdue' : inDays(p0.next.daysLeft)),
+        state: p0.next.daysLeft < 0 ? 'warn' : p0.next.daysLeft <= 7 ? 'soon' : '' };
+    }
+    if (id === 'contacts') return { head: 'Contacts', detail: 'Plumber, doctor, school', state: '' };
+    return { head: 'Set up', detail: 'Google Assistant', state: '' }; // smart home
+  }
+
+  function renderHighlights() {
+    var box = $('highlights'); box.innerHTML = '';
+    var any = false;
+    orderedWidgets().forEach(function (w) {
+      if (!w.shown) return; any = true;
+      var def = w.def, d = widgetData(def.id);
+      var b = el('button', 'w' + (def.wide ? ' wide' : '') + (d.state ? ' ' + d.state : ''));
+      b.style.setProperty('--c', 'var(' + def.color + ')');
+      b.setAttribute('aria-label', def.label + ': ' + d.head + '. ' + (d.detail || ''));
+      var t = el('div', 'wt'), ic = el('span', 'wi'); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[def.id] + '</svg>';
+      t.appendChild(ic); t.appendChild(el('span', null, def.label)); b.appendChild(t);
+      b.appendChild(el('div', 'wh', d.head));
+      if (d.detail) b.appendChild(el('div', 'wd', d.detail));
+      if (d.lines && d.lines.length) {
+        var wl = el('div', 'wl');
+        d.lines.forEach(function (ln) { var r = el('div'); r.appendChild(el('b', null, ln[0])); r.appendChild(document.createTextNode(ln[1])); wl.appendChild(r); });
+        b.appendChild(wl);
+      }
+      if (d.bar) { var bar = el('div', 'bar'), fill = el('div', 'fill' + d.bar.cls); fill.style.width = d.bar.pct + '%'; bar.appendChild(fill); b.appendChild(bar); }
+      b.addEventListener('click', function () { go(d.act || def.act); });
+      box.appendChild(b);
+    });
+    if (!any) box.appendChild(el('div', 'empty', 'No widgets are showing. Tap Edit to add some.'));
+  }
+
+  // ----- Edit: choose what shows and in which order (saved on this phone) -----
+  $('widgets-edit').addEventListener('click', function () { if (S) openSheet('widgets-edit'); });
+  function buildWidgetsEdit(body) {
+    $('sheet-title').textContent = 'Edit widgets';
+    $('sheet-sub').textContent = 'Choose what to show and in which order. This is saved on this phone only.';
+    var list = orderedWidgets().map(function (w) { return { id: w.def.id, label: w.def.label, shown: w.shown }; });
+    var box = el('div');
+    function render() {
+      box.innerHTML = '';
+      list.forEach(function (w, i) {
+        var row = el('div', 'wrow');
+        var tg = el('button', 'chip' + (w.shown ? ' on' : ''), w.shown ? 'Shown' : 'Hidden'); tg.setAttribute('aria-pressed', w.shown ? 'true' : 'false');
+        tg.addEventListener('click', function () { w.shown = !w.shown; render(); });
+        var up = el('button', 'stepbtn', '\u25B2'), dn = el('button', 'stepbtn', '\u25BC');
+        up.setAttribute('aria-label', 'Move ' + w.label + ' up'); dn.setAttribute('aria-label', 'Move ' + w.label + ' down');
+        up.disabled = i === 0; dn.disabled = i === list.length - 1;
+        up.addEventListener('click', function () { var x = list[i]; list[i] = list[i - 1]; list[i - 1] = x; render(); });
+        dn.addEventListener('click', function () { var x = list[i]; list[i] = list[i + 1]; list[i + 1] = x; render(); });
+        row.appendChild(tg); row.appendChild(el('span', 'wname', w.label)); row.appendChild(up); row.appendChild(dn);
+        box.appendChild(row);
+      });
+    }
+    render(); body.appendChild(box);
+    var btns = el('div', 'formbtns');
+    var save = el('button', 'savebtn', 'Save');
+    save.addEventListener('click', function () {
+      saveWidgetPrefs({ order: list.map(function (w) { return w.id; }), hidden: list.filter(function (w) { return !w.shown; }).map(function (w) { return w.id; }) });
+      toast('Widgets saved'); closeSheet();
+    });
+    var reset = el('button', 'delbtn', 'Put everything back to the default');
+    reset.addEventListener('click', function () { saveWidgetPrefs({}); toast('Widgets reset'); closeSheet(); });
+    btns.appendChild(save); btns.appendChild(reset); body.appendChild(btns);
   }
 
   // ---------- Sheet (use stock / shopping list / bills) ----------
@@ -959,6 +1076,8 @@
       buildEventForm(body);
     } else if (mode === 'reminder-form') {
       buildReminderForm(body);
+    } else if (mode === 'widgets-edit') {
+      buildWidgetsEdit(body);
     } else if (mode === 'nappy-form') {
       buildNappyForm(body);
     } else if (mode === 'sleep-form') {
