@@ -72,6 +72,11 @@
   .logincard input { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; }
   .logincard button { width: 100%; border: 0; border-radius: 14px; padding: 14px; margin-top: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 17px; }
   .logincard button[disabled] { opacity: .6; }
+  .notifbanner { display: none; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--ok-bg); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin: 0 0 14px; }
+  .notifbanner span { flex: 1; min-width: 160px; font-weight: 600; }
+  .notifbanner button { border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 600; }
+  #notif-on { background: var(--accent); color: var(--accent-ink); }
+  #notif-later { background: transparent; color: var(--muted); }
   .logincard .lerr { color: var(--warn); font-weight: 600; min-height: 22px; margin: 10px 0 0; }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   * { box-sizing: border-box; }
@@ -310,6 +315,7 @@
     <div style="display:flex;gap:8px"><button class="theme" id="theme" aria-label="Switch light or dark mode">Theme</button><button class="theme" id="signout">Sign out</button></div>
   </div>
 
+  <div class="notifbanner" id="notif-banner"><span>Get reminders on this phone</span><button id="notif-on">Turn on</button><button id="notif-later">Not now</button></div>
   <div class="summary" id="summary" aria-live="polite"><p class="big">Loading your household…</p></div>
 
   <section aria-labelledby="h-log">
@@ -331,7 +337,7 @@
     <div class="hlhead"><h2 id="h-hl">Across the house</h2><button class="pbtn" id="widgets-edit">Edit</button></div>
     <div class="widgets" id="highlights"></div>
   </section>
-<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 3.3</p></div>
+<p style="text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px">App version 4.1<br><span id="notif-status"></span></p></div>
 
 <nav aria-label="Main">
   <div class="in">
@@ -579,6 +585,7 @@
       btn.disabled = false;
       if (res && res.ok) {
         saveCreds({ key: key, who: res.result.name });
+        try { window.dispatchEvent(new CustomEvent('household-signin', { detail: res.result.name })); } catch (e) {}
         document.getElementById('lg-key').value = '';
         document.getElementById('loginwrap').classList.remove('open');
         var w = waiters; waiters = []; w.forEach(function (f) { f(); });
@@ -981,6 +988,34 @@
     btns.appendChild(save); btns.appendChild(reset); body.appendChild(btns);
   }
 
+  // ---------- Bought: mark restocked, with an optional cost logged to Money ----------
+  var boughtItem = null;
+  var SHOP_MONEY_CATS = ['Groceries', 'Baby', 'Transport', 'Home', 'Eating out', 'Health', 'Fun', 'Other'];
+  var SHOP_CAT_GUESS = { food: 'Groceries', baby: 'Baby', cleaning: 'Home', household: 'Home', health: 'Health', medical: 'Health' };
+  function guessMoneyCat(stockCategory) { return SHOP_CAT_GUESS[String(stockCategory || '').toLowerCase()] || 'Other'; }
+  function buildBoughtForm(body) {
+    var i = boughtItem;
+    $('sheet-title').textContent = i.item;
+    $('sheet-sub').textContent = 'Mark it as bought. Add the cost if you have the receipt, or leave it blank.';
+    body.appendChild(fieldEl('Cost (optional)', 'bo-cost', 'text', '', '', { inputmode: 'decimal', autocomplete: 'off', placeholder: '0' }));
+    body.appendChild(selectEl('Category', 'bo-cat', SHOP_MONEY_CATS.map(function (c) { return { v: c, l: c }; }), guessMoneyCat(i.category)));
+    var save = el('button', 'savebtn', 'Mark as bought');
+    save.addEventListener('click', function () {
+      var costRaw = $('bo-cost').value.trim(), cat = $('bo-cat').value;
+      if (costRaw && !(parseFloat(costRaw.replace(',', '.')) > 0)) { toast('Please enter a valid cost, or leave it blank'); return; }
+      save.disabled = true; save.textContent = 'Saving\u2026';
+      var r = google.script.run
+        .withSuccessHandler(function () {
+          i.qty = i.std > 0 ? i.std : i.qty + i.buy;
+          toast(costRaw ? i.item + ' restocked, ' + money(parseFloat(costRaw.replace(',', '.'))) + ' logged' : i.item + ' restocked');
+          closeSheet(); load();
+        })
+        .withFailureHandler(function (err) { errToast(err); save.disabled = false; save.textContent = 'Mark as bought'; });
+      r.restockItem(i.item, costRaw, cat);
+    });
+    body.appendChild(save);
+  }
+
   // ---------- Sheet (use stock / shopping list / bills) ----------
   function openSheet(m) {
     if (!S) return;
@@ -1036,12 +1071,11 @@
         var b = el('button', 'item'); b.appendChild(el('span', 'nm', i.item));
         b.appendChild(el('span', 'qty', 'Buy ' + buyAmount(i) + ' ' + i.unit + (i.std > 0 ? ' (' + i.qty + ' of ' + i.std + ' left)' : '')));
         b.appendChild(el('span', 'act', 'Bought'));
-        b.addEventListener('click', function () {
-          i.qty = i.std > 0 ? i.std : i.qty + i.buy; toast(i.item + ' restocked'); renderSheet();
-          call('restockItem', [i.item]);
-        });
+        b.addEventListener('click', function () { boughtItem = i; openSheet('bought-form'); });
         body.appendChild(b);
       });
+    } else if (mode === 'bought-form') {
+      buildBoughtForm(body);
     } else if (mode === 'form') {
       buildForm(body);
     } else if (mode === 'chore-form') {
